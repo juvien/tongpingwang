@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>同频局｜有人懂你的兴趣，也有人愿意陪你去现场</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="site-header">
+        <a class="brand-mark" href="#top">
+          <span class="brand-mark__icon">同</span>
+          <div>
+            <strong>同频局</strong>
+            <p>兴趣社交 · 同城活动 · 轻约会验证站</p>
+          </div>
+        </a>
+        <nav class="site-nav">
+          <a href="#story">为什么会心动</a>
+          <a href="#quiz">同频测试</a>
+          <a href="#activities">城市现场</a>
+          <a href="#presale">早鸟资格</a>
+          <a href="#support">加入社群</a>
+        </nav>
+        <div class="header-actions">
+          <a class="ghost-button hidden" id="admin-link" href="/admin">后台</a>
+          <button class="ghost-button hidden" id="logout-button">退出</button>
+          <button class="primary-button" id="auth-jump">注册 / 登录</button>
+        </div>
+      </header>
+
+      <main id="top">
+        <section class="hero-stage" aria-label="同频局首页主视觉">
+          <img class="hero-stage__image" src="/static/assets/hero-v2.png" alt="夜晚城市音乐现场和市集里的同频相遇" />
+          <div class="hero-stage__shade"></div>
+          <div class="hero-stage__content">
+            <span class="eyebrow eyebrow--light">女性友好 · 亚文化兴趣社交</span>
+            <h1>同频局</h1>
+            <p>
+              给喜欢 livehouse、市集、摄影、漫展和城市散步的人，一个更自然也更安心的认识入口。
+              先看见彼此的兴趣和节奏，再决定要不要走进同一个现场。
+            </p>
+            <div class="hero-actions">
+              <button class="primary-button" data-scroll="#auth-panel">开始同频测试</button>
+              <button class="ghost-button ghost-button--light" data-scroll="#activities">浏览城市活动</button>
+            </div>
+            <div class="hero-proof">
+              <span>3 分钟画像</span>
+              <span>人工审核</span>
+              <span>同城小局</span>
+              <span>社群承接</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="scene-band">
+          <div class="scene-band__track">
+            <span>摄影散步</span>
+            <span>漫展同伴</span>
+            <span>市集约会</span>
+            <span>展览和书店</span>
+            <span>胶片夜游</span>
+            <span>livehouse 预热局</span>
+            <span>手作慢社交</span>
+            <span>咖啡馆长对话</span>
+          </div>
+        </section>
+
+        <section class="story-grid" id="story">
+          <article class="story-card">
+            <span>同频先于匹配</span>
+            <h2>不是先判断“合不合适”，而是先确认“聊起来会不会累”。</h2>
+            <p>兴趣标签只是入口，我们更关心你喜欢什么氛围、什么节奏、什么样的表达会让你放松。</p>
+          </article>
+          <article class="story-card">
+            <span>女性友好体验</span>
+            <h2>先让人有安全感，再谈火花和心动。</h2>
+            <p>资料审核、边界表达、活动小组和人工社群承接，会比纯陌生人私聊更适合早期建立信任。</p>
+          </article>
+          <article class="story-card">
+            <span>从线上到现场</span>
+            <h2>把“想认识你”落到一场具体活动里。</h2>
+            <p>摄影散步、展览书店、演出预热和主题市集，都能让第一次开口变得不那么突兀。</p>
+          </article>
+        </section>
+
+        <section class="promise-panel">
+          <div class="section-heading">
+            <span class="eyebrow">更像头部社交产品的核心转化</span>
+            <h2>先给情绪价值，再给匹配效率，最后把关系交给真实场景。</h2>
+            <p>这一版首页把“安全感、同频感、现场感”放到更前面，让用户一进来就知道这里不是泛泛聊天，而是认真筛选同城关系。</p>
+          </div>
+          <div class="quote-grid">
+            <article class="quote-card">
+              <strong>被看见</strong>
+              <p>“我想被理解的，不只是头像和年龄，而是我为什么会为一场演出、一卷胶片、一家书店心动。”</p>
+            </article>
+            <article class="quote-card">
+              <strong>不被打扰</strong>
+              <p>“我希望认识人之前，能先确认对方的边界、节奏和目的，不用在低质量私信里消耗自己。”</p>
+            </article>
+            <article class="quote-card">
+              <strong>走到线下</strong>
+              <p>“如果真的聊得来，我更想有一个自然见面的理由，而不是一直停在聊天框里互相试探。”</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="split-panel" id="lead-panel">
+          <div class="section-heading">
+            <span class="eyebrow">首批体验报名</span>
+            <h2>还没准备好完整注册，也可以先留下一个入口</h2>
+            <p>告诉我们你在哪座城市、想去什么现场、想认识什么样的人，我们会优先邀请你加入同频测试、城市社群或小型活动。</p>
+          </div>
+          <form class="glass-form" id="lead-form">
+            <label>
+              你的称呼
+              <input name="name" placeholder="比如：阿久 / Momo / 胶片猫" required />
+            </label>
+            <label>
+              所在城市
+              <input name="city" placeholder="上海 / 杭州 / 成都" required />
+            </label>
+            <label>
+              联系方式
+              <input name="contact" placeholder="微信号 / 手机号 / 小红书号" required />
+            </label>
+            <label>
+              想参加什么
+              <textarea name="interest_note" rows="4" placeholder="比如：我想参加摄影散步局，也想认识愿意去 livehouse、能慢慢聊天的人"></textarea>
+            </label>
+            <button class="primary-button" type="submit">提交报名</button>
+            <p class="form-message" id="lead-message"></p>
+          </form>
+        </section>
+
+        <section class="dashboard-grid">
+          <div class="auth-panel" id="auth-panel">
+            <div class="auth-tabs">
+              <button class="auth-tab is-active" data-auth-tab="register">注册</button>
+              <button class="auth-tab" data-auth-tab="login">登录</button>
+            </div>
+            <form class="glass-form" id="register-form">
+              <label>
+                昵称
+                <input name="name" placeholder="你想被怎么称呼" required />
+              </label>
+              <label>
+                邮箱
+                <input name="email" type="email" placeholder="you@example.com" required />
+              </label>
+              <label>
+                密码
+                <input name="password" type="password" placeholder="至少 6 位" required />
+              </label>
+              <label>
+                城市
+                <input name="city" placeholder="上海 / 杭州 / 成都" required />
+              </label>
+              <button class="primary-button" type="submit">注册并进入同频流程</button>
+              <p class="form-message" id="register-message"></p>
+            </form>
+            <form class="glass-form hidden" id="login-form">
+              <label>
+                邮箱
+                <input name="email" type="email" placeholder="you@example.com" required />
+              </label>
+              <label>
+                密码
+                <input name="password" type="password" placeholder="请输入密码" required />
+              </label>
+              <button class="primary-button" type="submit">登录</button>
+              <p class="form-message" id="login-message"></p>
+              <p class="helper-copy">管理员演示账号：<code>admin@tongpin.local / Admin123!</code></p>
+            </form>
+          </div>
+
+          <div class="dashboard-panel hidden" id="dashboard-panel">
+            <div class="dashboard-head">
+              <div>
+                <span class="eyebrow">用户中心</span>
+                <h2 id="welcome-text">你好，欢迎回来</h2>
+              </div>
+              <div class="status-pills">
+                <span class="status-pill" id="review-pill">资料审核：待完善</span>
+                <span class="status-pill" id="match-pill">匹配进度：未开始</span>
+              </div>
+            </div>
+            <div class="mini-cards">
+              <article>
+                <strong id="signup-count">0</strong>
+                <span>已报名活动</span>
+              </article>
+              <article>
+                <strong id="presale-count">0</strong>
+                <span>早鸟资格</span>
+              </article>
+              <article>
+                <strong id="result-title">未测试</strong>
+                <span>当前同频画像</span>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="form-section" id="profile">
+          <div class="section-heading">
+            <span class="eyebrow">个人资料收集</span>
+            <h2>你的资料页应该像一张温柔的邀请函，而不是一份社交简历。</h2>
+            <p>写清楚你的兴趣、边界、空闲时间和期待关系，系统和运营才知道该把谁、哪场活动、哪个社群优先推给你。</p>
+          </div>
+          <form class="glass-form form-grid" id="profile-form">
+            <label>
+              展示昵称
+              <input name="nickname" placeholder="想让别人怎么称呼你" required />
+            </label>
+            <label>
+              出生年份
+              <input name="birth_year" type="number" min="1980" max="2010" placeholder="1998" />
+            </label>
+            <label>
+              城市
+              <input name="city" placeholder="上海 / 杭州 / 成都" required />
+            </label>
+            <label>
+              喜欢的见面场景
+              <select name="favorite_scene">
+                <option value="cafe">咖啡店或甜品店</option>
+                <option value="market">市集或快闪店</option>
+                <option value="walk">城市散步或拍照</option>
+                <option value="livehouse">livehouse / 小演出</option>
+                <option value="exhibition">展览 / 书店</option>
+              </select>
+            </label>
+            <label class="full-span">
+              自我介绍
+              <textarea name="bio" rows="4" placeholder="比如：最近常去小展和咖啡店，喜欢拍胶片，想认识聊天稳定、愿意周末白天见面的人。"></textarea>
+            </label>
+            <fieldset class="chip-fieldset">
+              <legend>关系期待</legend>
+              <label><input type="checkbox" name="goals" value="认真恋爱" />认真恋爱</label>
+              <label><input type="checkbox" name="goals" value="朋友到恋人" />朋友到恋人</label>
+              <label><input type="checkbox" name="goals" value="活动搭子" />活动搭子</label>
+              <label><input type="checkbox" name="goals" value="轻约会" />轻约会</label>
+            </fieldset>
+            <fieldset class="chip-fieldset">
+              <legend>兴趣标签</legend>
+              <label><input type="checkbox" name="interests" value="摄影" />摄影</label>
+              <label><input type="checkbox" name="interests" value="漫展" />漫展</label>
+              <label><input type="checkbox" name="interests" value="livehouse" />livehouse</label>
+              <label><input type="checkbox" name="interests" value="桌游" />桌游</label>
+              <label><input type="checkbox" name="interests" value="手作" />手作</label>
+              <label><input type="checkbox" name="interests" value="城市散步" />城市散步</label>
+              <label><input type="checkbox" name="interests" value="书店" />书店</label>
+              <label><input type="checkbox" name="interests" value="市集" />市集</label>
+            </fieldset>
+            <label>
+              聊天节奏
+              <select name="communication_style">
+                <option value="slow-warm">慢热但稳定</option>
+                <option value="playful-fast">活泼快节奏</option>
+                <option value="clear-direct">清晰直接</option>
+                <option value="soft-caring">温柔陪伴型</option>
+              </select>
+            </label>
+            <label>
+              空闲时间
+              <select name="availability">
+                <option value="weekday-night">工作日晚间</option>
+                <option value="weekend-day">周末白天</option>
+                <option value="weekend-night">周末夜晚</option>
+                <option value="flexible">比较灵活</option>
+              </select>
+            </label>
+            <label>
+              预算偏好
+              <select name="budget_preference">
+                <option value="light">轻消费，50 元以内</option>
+                <option value="medium">普通约会，50-120 元</option>
+                <option value="event">愿意参加演出或活动</option>
+              </select>
+            </label>
+            <button class="primary-button full-span" type="submit">保存资料</button>
+            <p class="helper-copy full-span">资料越具体，人工撮合越容易避开不合适的人，也更容易帮你找到愿意认真回应的人。</p>
+            <p class="form-message full-span" id="profile-message"></p>
+          </form>
+        </section>
+
+        <section class="form-section" id="quiz">
+          <div class="section-heading">
+            <span class="eyebrow">轻人格 / 兴趣测试</span>
+            <h2>用 5 个问题，判断你更适合哪一种关系开场。</h2>
+            <p>测试结果会转化成活动推荐、社群分组和人工撮合提示，让“同频”不是一句空话。</p>
+          </div>
+          <form class="glass-form form-grid" id="quiz-form">
+            <label>
+              你更舒服的认识节奏
+              <select name="pace">
+                <option value="slow">先聊聊，再决定见面</option>
+                <option value="steady">聊几句就可以约个轻活动</option>
+                <option value="fast">感觉对了就想马上约</option>
+              </select>
+            </label>
+            <label>
+              最容易心动的场景
+              <select name="scene">
+                <option value="cafe">咖啡馆的对视和闲聊</option>
+                <option value="market">市集里一起逛摊</option>
+                <option value="livehouse">演出前后聊歌单</option>
+                <option value="exhibition">展览和书店安静并肩</option>
+                <option value="bookstore">一起挑书或拍照</option>
+              </select>
+            </label>
+            <label>
+              你的表达方式更像
+              <select name="expression">
+                <option value="gentle">慢慢说，先听对方</option>
+                <option value="playful">爱玩梗，气氛到了就开聊</option>
+                <option value="direct">喜欢明确表达兴趣和边界</option>
+              </select>
+            </label>
+            <label>
+              你对关系推进的态度
+              <select name="planning">
+                <option value="balanced">先自然相处，再看走向</option>
+                <option value="careful">比较认真，会看长期感</option>
+                <option value="intentional">一开始就希望目标明确</option>
+              </select>
+            </label>
+            <label>
+              你希望对方给你的感觉
+              <select name="energy">
+                <option value="warm">稳定温暖</option>
+                <option value="spark">很有火花</option>
+                <option value="high">有趣、有梗、很会带气氛</option>
+              </select>
+            </label>
+            <button class="primary-button full-span" type="submit">生成同频结果</button>
+            <p class="helper-copy full-span">完成后你会得到一份可用于运营撮合的同频画像，包括适合你的开场场景、聊天节奏和见面建议。</p>
+            <p class="form-message full-span" id="quiz-message"></p>
+          </form>
+        </section>
+
+        <section class="result-card" id="result-card">
+          <div class="section-heading">
+            <span class="eyebrow">同频结果页</span>
+            <h2>结果页不只告诉你“你是谁”，更告诉你“该从哪里开始遇见人”。</h2>
+            <p>我们会把画像翻译成可执行的关系建议：适合什么活动、怎么破冰、什么节奏更容易有回应。</p>
+          </div>
+          <div class="result-layout">
+            <article class="result-main">
+              <span class="result-badge" id="result-archetype">未生成</span>
+              <h3 id="result-heading">先完成资料和测试，我们会为你生成第一份同频画像。</h3>
+              <p id="result-summary">这份结果会用于活动推荐、人工审核和人工撮合，不会直接公开展示。</p>
+            </article>
+            <aside class="result-side">
+              <h4>下一步建议</h4>
+              <p id="result-match">完成测试后，会出现适合你的匹配方向。</p>
+              <ul id="result-suggestions">
+                <li>先完成个人资料</li>
+                <li>再提交轻人格测试</li>
+                <li>然后填写匹配意向问卷</li>
+              </ul>
+            </aside>
+          </div>
+        </section>
+
+        <section class="form-section" id="intent">
+          <div class="section-heading">
+            <span class="eyebrow">匹配意向问卷</span>
+            <h2>先说清楚你的关系节奏，才不会把自己交给随机匹配。</h2>
+            <p>有人想认真靠近，有人更想先做活动搭子。把期待写清楚，运营才能帮你减少无效沟通。</p>
+          </div>
+          <form class="glass-form form-grid" id="intent-form">
+            <label>
+              当前更想要
+              <select name="looking_for">
+                <option value="认真认识">认真认识，再决定是否发展</option>
+                <option value="轻松约会">轻松约会，先有好感再说</option>
+                <option value="活动搭子">先从同城活动搭子开始</option>
+              </select>
+            </label>
+            <label>
+              最想参加的场景
+              <select name="preferred_scene">
+                <option value="摄影散步">摄影散步</option>
+                <option value="市集巡游">市集巡游</option>
+                <option value="livehouse">livehouse 预热局</option>
+                <option value="书店展览">书店展览</option>
+              </select>
+            </label>
+            <label>
+              可接受的见面频率
+              <select name="schedule">
+                <option value="一周一次">一周一次左右</option>
+                <option value="两周一次">两周一次更舒服</option>
+                <option value="看感觉">看感觉，合适就约</option>
+              </select>
+            </label>
+            <label>
+              可接受的距离
+              <select name="distance">
+                <option value="同城区">同城区</option>
+                <option value="同城可地铁到达">同城可地铁到达</option>
+                <option value="跨城短途">跨城短途也可以</option>
+              </select>
+            </label>
+            <label class="full-span">
+              补充说明
+              <textarea name="notes" rows="4" placeholder="比如：希望先群体活动，不接受深夜单独见面；更想认识表达稳定、愿意认真回复的人。"></textarea>
+            </label>
+            <button class="primary-button full-span" type="submit">提交匹配意向</button>
+            <p class="form-message full-span" id="intent-message"></p>
+          </form>
+        </section>
+
+        <section class="activities-section" id="activities">
+          <div class="section-heading">
+            <span class="eyebrow">城市现场</span>
+            <h2>把第一次见面放进一个有氛围、可退出、能自然开口的现场。</h2>
+            <p>每张活动卡都告诉你适合谁、为什么值得来、运营会怎样帮你降低尴尬感。</p>
+          </div>
+          <div class="activity-grid" id="activity-grid"></div>
+          <form class="glass-form hidden" id="activity-note-form">
+            <h3 id="activity-note-title">活动备注</h3>
+            <input type="hidden" name="activity_id" />
+            <label>
+              想让运营知道的事
+              <textarea name="note" rows="4" placeholder="比如：我更想和摄影方向的人组队，或者希望安排新手友好的小组"></textarea>
+            </label>
+            <button class="primary-button" type="submit">确认报名</button>
+            <p class="form-message" id="activity-message"></p>
+          </form>
+        </section>
+
+        <section class="split-panel" id="presale">
+          <div class="section-heading">
+            <span class="eyebrow">会员预售 / 早鸟资格页</span>
+            <h2>早鸟权益不卖焦虑，只卖更省心的筛选和更优先的运营响应。</h2>
+            <p>先记录意向，再由客服确认权益。低成本验证阶段不催付费，重点看用户愿不愿意为高质量连接买单。</p>
+          </div>
+          <form class="glass-form" id="presale-form">
+            <label>
+              选择权益包
+              <select name="plan_name">
+                <option value="测试报告升级版">测试报告升级版｜19 元｜看到更完整的关系开场建议</option>
+                <option value="城市早鸟资格">城市早鸟资格｜49 元｜优先进入城市活动和社群</option>
+                <option value="精选撮合体验包">精选撮合体验包｜129 元｜人工筛选 3 位同频候选</option>
+              </select>
+            </label>
+            <label>
+              金额
+              <select name="amount">
+                <option value="19">19</option>
+                <option value="49">49</option>
+                <option value="129">129</option>
+              </select>
+            </label>
+            <label>
+              备注
+              <textarea name="note" rows="4" placeholder="比如：想优先加入上海摄影社群、想报名市集活动、想优先认识认真恋爱用户"></textarea>
+            </label>
+            <button class="primary-button" type="submit">生成早鸟记录</button>
+            <p class="helper-copy">这里先记录你的付费意向，方便低成本验证；正式收款可以后续接入微信支付。</p>
+            <p class="form-message" id="presale-message"></p>
+          </form>
+        </section>
+
+        <section class="support-section" id="support">
+          <div class="section-heading">
+            <span class="eyebrow">客服 / 社群承接入口</span>
+            <h2>把关系从页面接到社群里，让每一步都有人能回应。</h2>
+          </div>
+          <div class="support-card">
+            <img src="/static/assets/support-card.svg" alt="客服社群入口示意图" />
+            <div>
+              <h3>添加客服进入城市社群</h3>
+              <p id="support-copy">客服会根据你的城市、兴趣标签和活动报名情况，把你拉进对应的兴趣群或安排人工撮合。</p>
+              <ul class="support-list">
+                <li>客服微信：<strong id="support-wechat">TongPinClub</strong></li>
+                <li>在线时间：<strong id="support-hours">每日 12:00 - 22:00</strong></li>
+                <li>添加时备注：<strong>同频局 + 城市 + 兴趣</strong></li>
+              </ul>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>

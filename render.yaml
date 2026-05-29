@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: tongpin-h5
+    runtime: python
+    plan: starter
+    buildCommand: ""
+    startCommand: python3 server.py
+    healthCheckPath: /healthz
+    disk:
+      name: tongpin-data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: TONGPIN_DATA_DIR
+        value: /opt/render/project/src/data
+      - key: TONGPIN_COOKIE_SECURE
+        value: "1"

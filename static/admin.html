@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>同频局后台</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body class="admin-body">
+    <div class="page-shell admin-shell">
+      <header class="site-header">
+        <a class="brand-mark" href="/">
+          <span class="brand-mark__icon">局</span>
+          <div>
+            <strong>同频局后台</strong>
+            <p>低成本验证版运营控制台</p>
+          </div>
+        </a>
+        <div class="header-actions">
+          <a class="ghost-button" href="/">返回前台</a>
+          <button class="primary-button" id="admin-logout">退出登录</button>
+        </div>
+      </header>
+
+      <main>
+        <section class="admin-hero">
+          <div class="admin-hero__copy">
+            <span class="eyebrow">最小后台能力</span>
+            <h1>把完整注册用户、线索报名和付费意向放在同一个控制台里看清楚。</h1>
+          </div>
+          <div class="admin-toolbar">
+            <p class="helper-copy" id="admin-status">正在检查权限…</p>
+            <div class="admin-toolbar__actions">
+              <span class="helper-copy" id="admin-updated-at">尚未刷新</span>
+              <button class="ghost-button" id="admin-refresh" type="button">刷新数据</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="admin-panel hidden" id="admin-login-panel">
+          <div class="section-heading">
+            <span class="eyebrow">管理员切换</span>
+            <h2>当前不是管理员身份</h2>
+            <p>如果你刚刚用普通用户注册过账号，可以直接在这里切回管理员账号，再查看后台数据。</p>
+          </div>
+          <form class="glass-form admin-login-form" id="admin-login-form">
+            <label>
+              管理员邮箱
+              <input name="email" type="email" value="admin@tongpin.local" required />
+            </label>
+            <label>
+              管理员密码
+              <input name="password" type="password" value="Admin123!" required />
+            </label>
+            <button class="primary-button" type="submit">切换到管理员后台</button>
+            <p class="form-message" id="admin-login-message"></p>
+          </form>
+        </section>
+
+        <div class="hidden" id="admin-content">
+          <section class="mini-cards admin-metrics" id="admin-metrics"></section>
+
+          <section class="admin-panel">
+            <div class="section-heading">
+              <span class="eyebrow">用户列表</span>
+              <h2>按关键词和标签筛选完整注册用户</h2>
+              <p>这里展示已经完成注册的用户。顶部“报名成为体验官”的线索会单独出现在下面的线索池。</p>
+            </div>
+            <form class="admin-filters" id="admin-filter-form">
+              <input name="search" placeholder="搜索昵称 / 邮箱 / 城市" />
+              <input name="tag" placeholder="筛选标签，比如 摄影 / 市集" />
+              <button class="primary-button" type="submit">查询</button>
+            </form>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>用户</th>
+                    <th>城市</th>
+                    <th>标签</th>
+                    <th>审核</th>
+                    <th>匹配</th>
+                    <th>时间</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-users-body"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="admin-panel">
+            <div class="section-heading">
+              <span class="eyebrow">线索池</span>
+              <h2>查看未注册的报名线索</h2>
+              <p>用户如果只填写了前台报名页，没有真正注册账号，会出现在这里，方便你手动拉群或邀约活动。</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>称呼</th>
+                    <th>城市</th>
+                    <th>联系方式</th>
+                    <th>兴趣备注</th>
+                    <th>时间</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-leads-body"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="admin-panel">
+            <div class="section-heading">
+              <span class="eyebrow">付费用户记录</span>
+              <h2>会员预售 / 早鸟资格</h2>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>用户</th>
+                    <th>城市</th>
+                    <th>权益包</th>
+                    <th>金额</th>
+                    <th>状态</th>
+                    <th>时间</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-presales-body"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="admin-panel">
+            <div class="section-heading">
+              <span class="eyebrow">活动报名导出</span>
+              <h2>下载 CSV 给运营处理</h2>
+            </div>
+            <a class="primary-button export-link" href="/api/admin/activity-signups/export.csv">导出活动报名 CSV</a>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <script src="/static/admin.js"></script>
+  </body>
+</html>
