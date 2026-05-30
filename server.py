@@ -330,7 +330,7 @@ class AppHandler(BaseHTTPRequestHandler):
 
         if path == "/":
             return self.serve_static("index.html")
-        if path == "/admin":
+        if path in {"/admin", "/admin/"}:
             return self.serve_static("admin.html")
         if path == "/favicon.ico":
             return self.serve_static("assets/favicon.svg")
@@ -372,6 +372,8 @@ class AppHandler(BaseHTTPRequestHandler):
             return self.handle_login()
         if path == "/api/auth/logout":
             return self.handle_logout()
+        if path == "/api/admin/change-password":
+            return self.handle_admin_change_password()
         if path == "/api/leads":
             return self.handle_lead_submit()
         if path == "/api/profile":
@@ -1001,6 +1003,31 @@ class AppHandler(BaseHTTPRequestHandler):
             conn.close()
             return self.send_json(HTTPStatus.BAD_REQUEST, {"error": "invalid_match_status"})
         conn.execute("UPDATE profiles SET match_status = ?, updated_at = ? WHERE user_id = ?", (status, now_iso(), int(user_id)))
+        conn.commit()
+        conn.close()
+        return self.send_json(HTTPStatus.OK, {"ok": True})
+
+    def handle_admin_change_password(self):
+        payload = self.parse_body()
+        if payload is None:
+            return
+        current_password = payload.get("current_password", "")
+        new_password = payload.get("new_password", "")
+        if len(new_password) < 8:
+            return self.send_json(HTTPStatus.BAD_REQUEST, {"error": "new_password_too_short"})
+
+        conn = db_conn()
+        user = self.require_auth(conn, admin=True)
+        if not user:
+            conn.close()
+            return
+
+        row = conn.execute("SELECT password_hash FROM users WHERE id = ?", (user["id"],)).fetchone()
+        if not row or not verify_password(current_password, row["password_hash"]):
+            conn.close()
+            return self.send_json(HTTPStatus.BAD_REQUEST, {"error": "current_password_invalid"})
+
+        conn.execute("UPDATE users SET password_hash = ? WHERE id = ?", (hash_password(new_password), user["id"]))
         conn.commit()
         conn.close()
         return self.send_json(HTTPStatus.OK, {"ok": True})

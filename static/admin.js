@@ -15,6 +15,7 @@ const adminRefresh = document.getElementById("admin-refresh");
 const adminContent = document.getElementById("admin-content");
 const adminLoginPanel = document.getElementById("admin-login-panel");
 const adminLoginForm = document.getElementById("admin-login-form");
+const adminPasswordForm = document.getElementById("admin-password-form");
 
 adminLogout.addEventListener("click", async () => {
   await fetch("/api/auth/logout", { method: "POST" });
@@ -54,6 +55,38 @@ document.getElementById("admin-filter-form").addEventListener("submit", async (e
   await loadUsers(adminState.lastQuery);
 });
 
+adminPasswordForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const payload = Object.fromEntries(new FormData(adminPasswordForm).entries());
+  if ((payload.new_password || "").length < 8) {
+    setMessage("admin-password-message", "新密码至少 8 位。");
+    return;
+  }
+  if (payload.new_password !== payload.confirm_password) {
+    setMessage("admin-password-message", "两次输入的新密码不一致。");
+    return;
+  }
+  setMessage("admin-password-message", "正在更新密码…");
+  const button = adminPasswordForm.querySelector("button[type='submit']");
+  button.disabled = true;
+  try {
+    await apiJson("/api/admin/change-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        current_password: payload.current_password,
+        new_password: payload.new_password,
+      }),
+    });
+    adminPasswordForm.reset();
+    setMessage("admin-password-message", "密码更新成功。", true);
+  } catch (error) {
+    setMessage("admin-password-message", error.message || "密码更新失败，请稍后重试。");
+  } finally {
+    button.disabled = false;
+  }
+});
+
 async function bootstrapAdmin() {
   const me = await fetch("/api/auth/me").then((res) => res.json());
   if (!me.user || me.user.role !== "admin") {
@@ -74,7 +107,7 @@ async function bootstrapAdmin() {
 }
 
 async function loadOverview() {
-  const result = await fetch("/api/admin/overview").then((res) => res.json());
+  const result = await apiJson("/api/admin/overview");
   const overview = result.overview || {};
   adminMetrics.innerHTML = "";
   [
@@ -93,7 +126,7 @@ async function loadOverview() {
 
 async function loadUsers(queryString) {
   const suffix = queryString ? `?${queryString}` : "";
-  const result = await fetch(`/api/admin/users${suffix}`).then((res) => res.json());
+  const result = await apiJson(`/api/admin/users${suffix}`);
   adminUsersBody.innerHTML = "";
   if (!(result.users || []).length) {
     adminUsersBody.innerHTML = `<tr><td colspan="7" class="table-empty">暂时没有匹配的注册用户。</td></tr>`;
@@ -125,13 +158,20 @@ async function loadUsers(queryString) {
         const value = button.dataset.value;
         const endpoint = type === "review" ? "review" : "match-status";
         const payload = type === "review" ? { review_status: value } : { match_status: value };
-        await fetch(`/api/admin/users/${userId}/${endpoint}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        await Promise.all([loadOverview(), loadUsers(queryString)]);
-        updateRefreshStamp();
+        button.disabled = true;
+        try {
+          await apiJson(`/api/admin/users/${userId}/${endpoint}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          await Promise.all([loadOverview(), loadUsers(queryString)]);
+          updateRefreshStamp();
+        } catch (error) {
+          adminStatus.textContent = `操作失败：${error.message || "请稍后重试"}`;
+        } finally {
+          button.disabled = false;
+        }
       });
     });
     adminUsersBody.appendChild(row);
@@ -139,7 +179,7 @@ async function loadUsers(queryString) {
 }
 
 async function loadLeads() {
-  const result = await fetch("/api/admin/leads").then((res) => res.json());
+  const result = await apiJson("/api/admin/leads");
   adminLeadsBody.innerHTML = "";
   if (!(result.leads || []).length) {
     adminLeadsBody.innerHTML = `<tr><td colspan="5" class="table-empty">暂时还没有新的报名线索。</td></tr>`;
@@ -159,7 +199,7 @@ async function loadLeads() {
 }
 
 async function loadPresales() {
-  const result = await fetch("/api/admin/presales").then((res) => res.json());
+  const result = await apiJson("/api/admin/presales");
   adminPresalesBody.innerHTML = "";
   if (!(result.presales || []).length) {
     adminPresalesBody.innerHTML = `<tr><td colspan="6" class="table-empty">暂时还没有会员预售记录。</td></tr>`;
@@ -183,15 +223,20 @@ async function refreshAllAdminData() {
   if (!adminState.me) return;
   adminRefresh.disabled = true;
   adminStatus.textContent = `已登录管理员：${adminState.me.name}，正在同步最新数据…`;
-  await Promise.all([
-    loadOverview(),
-    loadUsers(adminState.lastQuery),
-    loadLeads(),
-    loadPresales(),
-  ]);
-  updateRefreshStamp();
-  adminRefresh.disabled = false;
-  adminStatus.textContent = `已登录管理员：${adminState.me.name}，后台会自动刷新最新注册、线索和付费记录。`;
+  try {
+    await Promise.all([
+      loadOverview(),
+      loadUsers(adminState.lastQuery),
+      loadLeads(),
+      loadPresales(),
+    ]);
+    updateRefreshStamp();
+    adminStatus.textContent = `已登录管理员：${adminState.me.name}，后台会自动刷新最新注册、线索和付费记录。`;
+  } catch (error) {
+    adminStatus.textContent = `数据同步失败：${error.message || "请稍后重试"}`;
+  } finally {
+    adminRefresh.disabled = false;
+  }
 }
 
 function ensureRefreshTimer() {
@@ -233,6 +278,17 @@ function setMessage(id, text, success = false) {
   if (!el) return;
   el.textContent = text;
   el.style.color = success ? "var(--success)" : "var(--muted)";
+}
+
+async function apiJson(url, options) {
+  const response = await fetch(url, options);
+  const contentType = response.headers.get("content-type") || "";
+  const payload = contentType.includes("application/json") ? await response.json() : {};
+  if (!response.ok) {
+    const msg = payload.error || `HTTP ${response.status}`;
+    throw new Error(msg);
+  }
+  return payload;
 }
 
 window.addEventListener("focus", () => {
