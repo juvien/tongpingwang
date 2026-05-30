@@ -11,6 +11,17 @@ SUPPORT_WECHAT="${TONGPIN_SUPPORT_WECHAT:-TongPinClub}"
 SUPPORT_HOURS="${TONGPIN_SUPPORT_HOURS:-每日 12:00 - 22:00}"
 SUPPORT_MESSAGE="${TONGPIN_SUPPORT_MESSAGE:-添加客服后备注“同频局”，我们会把你拉入对应城市的兴趣社群。}"
 COOKIE_SECURE="${TONGPIN_COOKIE_SECURE:-0}"
+SSH_KEY="${SSH_KEY:-}"
+SSH_OPTS="${SSH_OPTS:-}"
+
+SSH_ARGS=()
+if [[ -n "${SSH_KEY}" ]]; then
+  SSH_ARGS+=("-i" "${SSH_KEY}")
+fi
+if [[ -n "${SSH_OPTS}" ]]; then
+  # shellcheck disable=SC2206
+  SSH_ARGS+=(${SSH_OPTS})
+fi
 
 if [[ -z "${ADMIN_PASSWORD}" ]]; then
   ADMIN_PASSWORD="$(python3 - <<'PY'
@@ -39,11 +50,11 @@ tar \
   -czf "${TMP_ARCHIVE}" .
 
 echo "Preparing server ${SERVER_USER}@${SERVER_HOST}..."
-ssh "${SERVER_USER}@${SERVER_HOST}" "mkdir -p '${APP_DIR}'"
-scp "${TMP_ARCHIVE}" "${SERVER_USER}@${SERVER_HOST}:${APP_DIR}/release.tar.gz"
+ssh "${SSH_ARGS[@]}" "${SERVER_USER}@${SERVER_HOST}" "mkdir -p '${APP_DIR}'"
+scp "${SSH_ARGS[@]}" "${TMP_ARCHIVE}" "${SERVER_USER}@${SERVER_HOST}:${APP_DIR}/release.tar.gz"
 
 echo "Deploying application..."
-ssh "${SERVER_USER}@${SERVER_HOST}" \
+ssh "${SSH_ARGS[@]}" "${SERVER_USER}@${SERVER_HOST}" \
   "APP_DIR='${APP_DIR}' APP_PORT='${APP_PORT}' ADMIN_EMAIL='${ADMIN_EMAIL}' ADMIN_PASSWORD='${ADMIN_PASSWORD}' SUPPORT_WECHAT='${SUPPORT_WECHAT}' SUPPORT_HOURS='${SUPPORT_HOURS}' SUPPORT_MESSAGE='${SUPPORT_MESSAGE}' COOKIE_SECURE='${COOKIE_SECURE}' bash -s" <<'REMOTE'
 set -euo pipefail
 
