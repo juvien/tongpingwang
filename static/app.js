@@ -3,7 +3,51 @@ const state = {
   profile: null,
   activities: [],
   selectedActivityId: null,
+  staticMode: location.protocol === "file:" || location.hostname.endsWith("github.io"),
 };
+
+const staticStoreKey = "tongpin-static-demo";
+const demoActivities = [
+  {
+    id: 1,
+    title: "海盐胶片散步局",
+    city: "上海",
+    theme: "摄影漫步",
+    date_label: "周六 14:00",
+    location: "武康路口袋花园",
+    price: 59,
+    capacity: 18,
+    signup_count: 7,
+    description: "适合喜欢胶片、咖啡和慢节奏散步的同城认识活动，现场会有破冰卡和双人拍照任务。",
+    hero_color: "#ff7d66",
+  },
+  {
+    id: 2,
+    title: "夜光市集轻约会",
+    city: "杭州",
+    theme: "市集社交",
+    date_label: "周五 19:30",
+    location: "天目里草坪",
+    price: 49,
+    capacity: 24,
+    signup_count: 11,
+    description: "围绕手作摊位、城市音乐和同频问答展开，适合第一次认识的人自然聊天。",
+    hero_color: "#0f8f84",
+  },
+  {
+    id: 3,
+    title: "耳机共享 livehouse 预热局",
+    city: "成都",
+    theme: "演出前破冰",
+    date_label: "周日 18:30",
+    location: "东郊记忆南门",
+    price: 39,
+    capacity: 16,
+    signup_count: 6,
+    description: "用歌单和现场偏好破冰，先认识一小队愿意一起去现场的人。",
+    hero_color: "#b9824b",
+  },
+];
 
 const authJump = document.getElementById("auth-jump");
 const logoutButton = document.getElementById("logout-button");
@@ -30,7 +74,13 @@ authJump.addEventListener("click", () => {
 });
 
 logoutButton.addEventListener("click", async () => {
-  await fetch("/api/auth/logout", { method: "POST" });
+  if (state.staticMode) {
+    const data = loadStaticStore();
+    data.currentUserEmail = null;
+    saveStaticStore(data);
+  } else {
+    await fetch("/api/auth/logout", { method: "POST" });
+  }
   state.user = null;
   state.profile = null;
   syncAuthUI();
@@ -152,7 +202,7 @@ activityNoteForm.addEventListener("submit", async (event) => {
 async function bootstrap() {
   await loadActivities();
   await loadSupport();
-  const me = await fetch("/api/auth/me").then((res) => res.json());
+  const me = await getJson("/api/auth/me", getStaticMe);
   if (me.user) {
     state.user = me.user;
     await loadDashboard();
@@ -161,7 +211,7 @@ async function bootstrap() {
 }
 
 async function loadDashboard() {
-  const result = await fetch("/api/dashboard").then((res) => res.json());
+  const result = await getJson("/api/dashboard", getStaticDashboard);
   state.user = result.user;
   state.profile = result.profile || {};
   state.activitySignups = result.activity_signups || [];
@@ -172,7 +222,7 @@ async function loadDashboard() {
 }
 
 async function loadActivities() {
-  const result = await fetch("/api/activities").then((res) => res.json());
+  const result = await getJson("/api/activities", () => ({ activities: demoActivities }));
   state.activities = result.activities || [];
   activityGrid.innerHTML = "";
   state.activities.forEach((activity) => {
@@ -213,7 +263,13 @@ async function loadActivities() {
 }
 
 async function loadSupport() {
-  const result = await fetch("/api/support").then((res) => res.json());
+  const result = await getJson("/api/support", () => ({
+    support: {
+      wechat: "TongPinClub",
+      hours: "每日 12:00 - 22:00",
+      message: "添加客服后备注“同频局”，我们会把你拉入对应城市的兴趣社群。",
+    },
+  }));
   const support = result.support;
   document.getElementById("support-wechat").textContent = support.wechat;
   document.getElementById("support-hours").textContent = support.hours;
@@ -337,18 +393,187 @@ function serializeProfileForm() {
 
 async function api(url, method, payload, messageId) {
   setMessage(messageId, "处理中…");
-  const response = await fetch(url, {
-    method,
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  const result = await response.json();
-  if (!response.ok) {
-    setMessage(messageId, humanError(result.error || "请求失败"));
-    return null;
+  try {
+    if (state.staticMode) {
+      const localResult = localApi(url, payload);
+      if (localResult?.error) {
+        setMessage(messageId, humanError(localResult.error));
+        return null;
+      }
+      setMessage(messageId, "");
+      return localResult;
+    }
+    const response = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      setMessage(messageId, humanError(result.error || "请求失败"));
+      return null;
+    }
+    setMessage(messageId, "");
+    return result;
+  } catch (error) {
+    state.staticMode = true;
+    const localResult = localApi(url, payload);
+    if (localResult?.error) {
+      setMessage(messageId, humanError(localResult.error));
+      return null;
+    }
+    setMessage(messageId, "");
+    return localResult;
   }
-  setMessage(messageId, "");
-  return result;
+}
+
+async function getJson(url, fallbackFactory) {
+  try {
+    if (state.staticMode) return fallbackFactory();
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    state.staticMode = true;
+    return fallbackFactory();
+  }
+}
+
+function loadStaticStore() {
+  const raw = localStorage.getItem(staticStoreKey);
+  if (!raw) {
+    return { users: [], leads: [], activitySignups: [], presales: [], currentUserEmail: null };
+  }
+  try {
+    return JSON.parse(raw);
+  } catch (error) {
+    return { users: [], leads: [], activitySignups: [], presales: [], currentUserEmail: null };
+  }
+}
+
+function saveStaticStore(data) {
+  localStorage.setItem(staticStoreKey, JSON.stringify(data));
+}
+
+function getStaticMe() {
+  const data = loadStaticStore();
+  const user = data.users.find((item) => item.email === data.currentUserEmail);
+  return { user: user ? publicUser(user) : null };
+}
+
+function getStaticDashboard() {
+  const data = loadStaticStore();
+  const user = data.users.find((item) => item.email === data.currentUserEmail);
+  if (!user) return { user: null, profile: {}, activity_signups: [], presales: [] };
+  return {
+    user: publicUser(user),
+    profile: user.profile || {},
+    activity_signups: data.activitySignups.filter((item) => item.user_email === user.email),
+    presales: data.presales.filter((item) => item.user_email === user.email),
+  };
+}
+
+function localApi(url, payload) {
+  const data = loadStaticStore();
+  if (url === "/api/auth/register") {
+    if (!payload.name || !payload.email || !payload.password || !payload.city) return { error: "missing_fields" };
+    if (payload.password.length < 6) return { error: "weak_password" };
+    let user = data.users.find((item) => item.email === payload.email);
+    if (!user) {
+      user = {
+        id: Date.now(),
+        name: payload.name,
+        email: payload.email,
+        city: payload.city,
+        role: "user",
+        password: payload.password,
+        profile: { city: payload.city, review_status: "pending", match_status: "new" },
+      };
+      data.users.push(user);
+    }
+    data.currentUserEmail = user.email;
+    saveStaticStore(data);
+    return { user: publicUser(user) };
+  }
+  if (url === "/api/auth/login") {
+    const user = data.users.find((item) => item.email === payload.email && item.password === payload.password);
+    if (!user) return { error: "invalid_credentials" };
+    data.currentUserEmail = user.email;
+    saveStaticStore(data);
+    return { user: publicUser(user) };
+  }
+  if (url === "/api/leads") {
+    data.leads.push({ ...payload, id: Date.now(), created_at: new Date().toISOString() });
+    saveStaticStore(data);
+    return { ok: true };
+  }
+
+  const user = data.users.find((item) => item.email === data.currentUserEmail);
+  if (!user) return { error: "auth_required" };
+
+  if (url === "/api/profile") {
+    user.profile = {
+      ...(user.profile || {}),
+      ...payload,
+      primary_tags: (payload.interests || []).slice(0, 3).join(","),
+      updated_at: new Date().toISOString(),
+      review_status: "pending",
+      match_status: "new",
+    };
+    saveStaticStore(data);
+    return { profile: user.profile };
+  }
+  if (url === "/api/test") {
+    const result = summarizeLocalResult(payload.answers || {}, user.profile?.interests || []);
+    user.profile = { ...(user.profile || {}), test_answers: payload.answers || {}, test_result: result };
+    saveStaticStore(data);
+    return { result };
+  }
+  if (url === "/api/match-intent") {
+    user.profile = { ...(user.profile || {}), match_intent: payload, match_status: "shortlisted" };
+    saveStaticStore(data);
+    return { match_intent: payload };
+  }
+  if (url === "/api/presales") {
+    data.presales.push({ ...payload, id: Date.now(), user_email: user.email, status: "intent_confirmed" });
+    saveStaticStore(data);
+    return { ok: true };
+  }
+  if (url.includes("/api/activities/") && url.endsWith("/signup")) {
+    const activityId = Number(url.split("/")[3]);
+    const exists = data.activitySignups.some((item) => item.user_email === user.email && item.activity_id === activityId);
+    if (!exists) {
+      data.activitySignups.push({ id: Date.now(), user_email: user.email, activity_id: activityId, note: payload.note || "" });
+    }
+    saveStaticStore(data);
+    return { ok: true };
+  }
+  return { ok: true };
+}
+
+function publicUser(user) {
+  return { id: user.id, name: user.name, email: user.email, city: user.city, role: user.role };
+}
+
+function summarizeLocalResult(answers, interests) {
+  const picks = interests.length ? interests.slice(0, 3) : ["同城活动", "轻松聊天", "共同兴趣"];
+  const scene = answers.scene || "cafe";
+  if (scene === "exhibition" || scene === "bookstore") {
+    return {
+      archetype: "Harbor",
+      title: "安静靠岸型",
+      summary: "你更适合从轻松陪伴开始，先建立安全感，再慢慢进入更深的连接。",
+      best_match: "适合和会认真回复、愿意约白天局的人建立关系。",
+      suggestions: [`优先尝试 ${picks[0]} 相关活动。`, "破冰时先聊最近一次线下体验。", "首次见面尽量选择公开场合。"],
+    };
+  }
+  return {
+    archetype: "Vinyl",
+    title: "氛围唱片型",
+    summary: "你在场景感和情绪共振里最容易心动，线下活动和圈层共同体验会更有效。",
+    best_match: "适合配对愿意一起逛展、看演出、参加主题局的人。",
+    suggestions: [`优先尝试 ${picks[0]} 相关活动。`, "用共同兴趣开场会比硬聊关系更自然。", "把第一次见面放进具体场景里。"],
+  };
 }
 
 function ensureLogin(message) {
