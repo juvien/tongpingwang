@@ -4,7 +4,7 @@ set -euo pipefail
 SERVER_HOST="${SERVER_HOST:-39.103.91.85}"
 SERVER_USER="${SERVER_USER:-root}"
 APP_DIR="${APP_DIR:-/opt/tongpinwang}"
-APP_PORT="${APP_PORT:-8000}"
+APP_PORT="${APP_PORT:-80}"
 ADMIN_EMAIL="${TONGPIN_ADMIN_EMAIL:-admin@tongpin.local}"
 ADMIN_PASSWORD="${TONGPIN_ADMIN_PASSWORD:-}"
 SUPPORT_WECHAT="${TONGPIN_SUPPORT_WECHAT:-TongPinClub}"
@@ -31,7 +31,7 @@ PY
 )"
 fi
 
-TMP_ARCHIVE="$(mktemp -t tongpinwang.XXXXXX.tar.gz)"
+TMP_ARCHIVE="$(mktemp -t tongpinwang-systemd.XXXXXX.tar.gz)"
 
 cleanup() {
   rm -f "${TMP_ARCHIVE}"
@@ -53,7 +53,7 @@ echo "Preparing server ${SERVER_USER}@${SERVER_HOST}..."
 ssh "${SSH_ARGS[@]}" "${SERVER_USER}@${SERVER_HOST}" "mkdir -p '${APP_DIR}'"
 scp "${SSH_ARGS[@]}" "${TMP_ARCHIVE}" "${SERVER_USER}@${SERVER_HOST}:${APP_DIR}/release.tar.gz"
 
-echo "Deploying application..."
+echo "Deploying systemd service..."
 ssh "${SSH_ARGS[@]}" "${SERVER_USER}@${SERVER_HOST}" \
   "APP_DIR='${APP_DIR}' APP_PORT='${APP_PORT}' ADMIN_EMAIL='${ADMIN_EMAIL}' ADMIN_PASSWORD='${ADMIN_PASSWORD}' SUPPORT_WECHAT='${SUPPORT_WECHAT}' SUPPORT_HOURS='${SUPPORT_HOURS}' SUPPORT_MESSAGE='${SUPPORT_MESSAGE}' COOKIE_SECURE='${COOKIE_SECURE}' bash -s" <<'REMOTE'
 set -euo pipefail
@@ -62,43 +62,44 @@ cd "${APP_DIR}"
 
 tar -xzf release.tar.gz
 rm -f release.tar.gz
+find "${APP_DIR}" -name '._*' -delete
 
-if ! command -v docker >/dev/null 2>&1; then
-  echo "Installing Docker..."
-  if command -v apt-get >/dev/null 2>&1; then
-    apt-get update
-    apt-get install -y ca-certificates curl gnupg
-    curl -fsSL https://get.docker.com | sh
-  elif command -v yum >/dev/null 2>&1; then
-    yum install -y yum-utils curl
-    curl -fsSL https://get.docker.com | sh
-  else
-    echo "Unsupported server OS: install Docker manually first." >&2
-    exit 1
-  fi
-fi
+mkdir -p "${APP_DIR}/data" "${APP_DIR}/backups"
 
-if ! docker compose version >/dev/null 2>&1; then
-  echo "Docker Compose plugin is not available. Please install docker compose plugin." >&2
-  exit 1
-fi
-
-cat > .env <<EOF
+cat > /etc/tongpinwang.env <<EOF
 HOST=0.0.0.0
 PORT=${APP_PORT}
-TONGPIN_DATA_DIR=/app/data
-TONGPIN_BACKUP_DIR=/app/backups
+TONGPIN_DATA_DIR=${APP_DIR}/data
+TONGPIN_BACKUP_DIR=${APP_DIR}/backups
 TONGPIN_ADMIN_EMAIL=${ADMIN_EMAIL}
-TONGPIN_ADMIN_PASSWORD=${ADMIN_PASSWORD}
+TONGPIN_ADMIN_PASSWORD="${ADMIN_PASSWORD}"
 TONGPIN_SUPPORT_WECHAT=${SUPPORT_WECHAT}
-TONGPIN_SUPPORT_HOURS=${SUPPORT_HOURS}
-TONGPIN_SUPPORT_MESSAGE=${SUPPORT_MESSAGE}
+TONGPIN_SUPPORT_HOURS="${SUPPORT_HOURS}"
+TONGPIN_SUPPORT_MESSAGE="${SUPPORT_MESSAGE}"
 TONGPIN_COOKIE_SECURE=${COOKIE_SECURE}
 TONGPIN_SHOW_ADMIN_PASSWORD=0
 EOF
 
-docker compose up -d --build
-docker compose ps
+cat > /etc/systemd/system/tongpinwang.service <<EOF
+[Unit]
+Description=Tongpinwang backend data app
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=${APP_DIR}
+EnvironmentFile=/etc/tongpinwang.env
+ExecStart=/usr/bin/python3 ${APP_DIR}/server.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable tongpinwang
+systemctl restart tongpinwang
 
 echo "Waiting for health check..."
 for i in $(seq 1 30); do
@@ -114,7 +115,7 @@ REMOTE
 
 echo
 echo "Deployment complete."
-echo "Public URL: http://${SERVER_HOST}:${APP_PORT}/"
-echo "Admin URL:  http://${SERVER_HOST}:${APP_PORT}/admin"
+echo "Public URL: http://${SERVER_HOST}/"
+echo "Admin URL:  http://${SERVER_HOST}/admin"
 echo "Admin email: ${ADMIN_EMAIL}"
 echo "Admin password: ${ADMIN_PASSWORD}"

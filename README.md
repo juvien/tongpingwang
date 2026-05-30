@@ -36,6 +36,12 @@
 
 - `https://juvien.github.io/tongpingwang/`
 
+阿里云后端数据版地址：
+
+- 前台：`http://39.103.91.85/`
+- 后台：`http://39.103.91.85/admin`
+- 健康检查：`http://39.103.91.85/api/health`
+
 ### 本地启动
 
 ```bash
@@ -64,6 +70,7 @@ python3 server.py
 - [上线清单](docs/deploy-checklist.md)
 - [后端数据版部署说明](docs/backend-deploy.md)
 - [阿里云轻量服务器部署说明](docs/aliyun-deploy.md)
+- [阿里云 systemd 部署脚本](scripts/deploy_aliyun_systemd.sh)
 - [数据库备份脚本](scripts/backup_db.sh)
 - [数据库恢复脚本](scripts/restore_db.sh)
 
@@ -91,6 +98,16 @@ Docker 启动：
 ```bash
 cp .env.example .env
 docker compose up -d --build
+```
+
+阿里云 systemd 部署：
+
+```bash
+SERVER_HOST=39.103.91.85 \
+SERVER_USER=root \
+SSH_KEY=tmp/tongpin_deploy_key \
+APP_PORT=80 \
+scripts/deploy_aliyun_systemd.sh
 ```
 
 备份数据库：

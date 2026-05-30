@@ -10,8 +10,9 @@ import sqlite3
 from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from http.cookies import SimpleCookie
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
+from socketserver import ThreadingMixIn
 from urllib.parse import parse_qs, unquote, urlparse
 
 
@@ -32,12 +33,26 @@ ADMIN_PASSWORD = os.environ.get("TONGPIN_ADMIN_PASSWORD", "Admin123!")
 COOKIE_SECURE = os.environ.get("TONGPIN_COOKIE_SECURE", "0").lower() in {"1", "true", "yes"}
 
 
+class ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
+    daemon_threads = True
+
+
 def now_iso():
     return datetime.now(UTC).isoformat()
 
 
+def parse_iso_datetime(value):
+    if hasattr(datetime, "fromisoformat"):
+        return datetime.fromisoformat(value)
+    normalized = value.replace("Z", "+00:00")
+    if normalized.endswith("+00:00"):
+        normalized = normalized[:-6]
+        return datetime.strptime(normalized, "%Y-%m-%dT%H:%M:%S.%f").replace(tzinfo=UTC)
+    return datetime.strptime(normalized, "%Y-%m-%dT%H:%M:%S.%f").replace(tzinfo=UTC)
+
+
 def db_conn():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute("PRAGMA journal_mode = WAL")
@@ -489,7 +504,7 @@ class AppHandler(BaseHTTPRequestHandler):
         ).fetchone()
         if not row:
             return None
-        if datetime.fromisoformat(row["expires_at"]) < datetime.now(UTC):
+        if parse_iso_datetime(row["expires_at"]) < datetime.now(UTC):
             conn.execute("DELETE FROM sessions WHERE token = ?", (session.value,))
             conn.commit()
             return None
