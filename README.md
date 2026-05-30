@@ -9,6 +9,7 @@
 - [MVP 路线图](docs/mvp-roadmap.md)
 - [5 万内低成本验证版](docs/lean-5w-plan.md)
 - [后端数据版部署说明](docs/backend-deploy.md)
+- [阿里云轻量服务器部署说明](docs/aliyun-deploy.md)
 
 ## H5 验证站
 
@@ -62,6 +63,7 @@ python3 server.py
 - [环境变量示例](.env.example)
 - [上线清单](docs/deploy-checklist.md)
 - [后端数据版部署说明](docs/backend-deploy.md)
+- [阿里云轻量服务器部署说明](docs/aliyun-deploy.md)
 - [数据库备份脚本](scripts/backup_db.sh)
 - [数据库恢复脚本](scripts/restore_db.sh)
 
