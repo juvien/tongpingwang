@@ -1,0 +1,19 @@
+<svg width="640" height="560" viewBox="0 0 640 560" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="640" height="560" rx="36" fill="#FFF3EA"/>
+  <circle cx="172" cy="116" r="64" fill="#FFC5B4"/>
+  <circle cx="496" cy="126" r="92" fill="#DDF6F1"/>
+  <path d="M90 364C90 295.517 145.517 240 214 240H428C496.483 240 552 295.517 552 364V422C552 448.51 530.51 470 504 470H138C111.49 470 90 448.51 90 422V364Z" fill="#1F2233"/>
+  <path d="M136 370C136 327.562 170.562 293 213 293H427C469.438 293 504 327.562 504 370V411C504 430.33 488.33 446 469 446H171C151.67 446 136 430.33 136 411V370Z" fill="#3249FF"/>
+  <rect x="182" y="214" width="92" height="116" rx="46" fill="#FF7D66"/>
+  <rect x="360" y="200" width="98" height="130" rx="49" fill="#0E8C80"/>
+  <circle cx="228" cy="188" r="38" fill="#1F2233"/>
+  <circle cx="409" cy="172" r="44" fill="#1F2233"/>
+  <path d="M211 227C217.305 233.192 224.933 236.288 233 236C241.067 235.712 248.453 232.057 254 226" stroke="#FFF3EA" stroke-width="5" stroke-linecap="round"/>
+  <path d="M390 210C397.285 214.976 405.166 217.009 413 216.652C420.833 216.295 428.428 213.561 435 208" stroke="#FFF3EA" stroke-width="5" stroke-linecap="round"/>
+  <path d="M64 480C143.333 447.333 226.667 431 314 431C401.333 431 489.333 447.333 578 480" stroke="#FF7D66" stroke-width="12" stroke-linecap="round"/>
+  <path d="M136 116L184 84" stroke="#1F2233" stroke-width="8" stroke-linecap="round"/>
+  <path d="M474 88L526 122" stroke="#1F2233" stroke-width="8" stroke-linecap="round"/>
+  <path d="M255 106C283.667 121.333 319.333 129 362 129C404.667 129 441.333 115.667 472 89" stroke="#FF7D66" stroke-width="10" stroke-linecap="round"/>
+  <text x="54" y="78" fill="#1F2233" font-family="Arial, sans-serif" font-size="24" font-weight="700">同频局</text>
+  <text x="54" y="108" fill="#5D6176" font-family="Arial, sans-serif" font-size="16">兴趣社交 × 同城轻约会验证站</text>
+</svg>
