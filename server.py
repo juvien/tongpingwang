@@ -39,6 +39,9 @@ def now_iso():
 def db_conn():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA journal_mode = WAL")
+    conn.execute("PRAGMA busy_timeout = 5000")
     return conn
 
 
@@ -110,7 +113,7 @@ def summarize_result(answers, interests):
 
 
 def init_db():
-    DATA_DIR.mkdir(exist_ok=True)
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
     conn = db_conn()
     conn.executescript(
         """
@@ -392,6 +395,7 @@ class AppHandler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
+        self.send_security_headers()
         if extra_headers:
             for key, value in extra_headers.items():
                 self.send_header(key, value)
@@ -403,11 +407,15 @@ class AppHandler(BaseHTTPRequestHandler):
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", "text/plain; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
+        self.send_security_headers()
         self.end_headers()
         self.wfile.write(body)
 
     def serve_static(self, relative_path):
-        safe_path = STATIC_DIR / unquote(relative_path)
+        safe_path = self.safe_static_path(relative_path)
+        if safe_path is None:
+            self.send_error(HTTPStatus.NOT_FOUND, "Static asset not found")
+            return
         if not safe_path.exists() or safe_path.is_dir():
             self.send_error(HTTPStatus.NOT_FOUND, "Static asset not found")
             return
@@ -417,18 +425,36 @@ class AppHandler(BaseHTTPRequestHandler):
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
+        self.send_security_headers()
         self.end_headers()
         self.wfile.write(body)
 
     def head_static(self, relative_path):
-        safe_path = STATIC_DIR / unquote(relative_path)
+        safe_path = self.safe_static_path(relative_path)
+        if safe_path is None:
+            self.send_error(HTTPStatus.NOT_FOUND, "Static asset not found")
+            return
         if not safe_path.exists() or safe_path.is_dir():
             self.send_error(HTTPStatus.NOT_FOUND, "Static asset not found")
             return
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", self.guess_type(safe_path))
         self.send_header("Content-Length", str(safe_path.stat().st_size))
+        self.send_security_headers()
         self.end_headers()
+
+    def safe_static_path(self, relative_path):
+        requested = (STATIC_DIR / unquote(relative_path)).resolve()
+        try:
+            requested.relative_to(STATIC_DIR.resolve())
+        except ValueError:
+            return None
+        return requested
+
+    def send_security_headers(self):
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
+        self.send_header("Permissions-Policy", "geolocation=(), camera=(), microphone=()")
 
     def guess_type(self, path):
         types = {
@@ -1044,7 +1070,10 @@ def run():
     ThreadingHTTPServer.allow_reuse_address = True
     server = ThreadingHTTPServer((host, port), AppHandler)
     print(f"TongPin Local is running at http://{host}:{port}")
-    print(f"Admin login: {ADMIN_EMAIL} / {ADMIN_PASSWORD}")
+    if os.environ.get("TONGPIN_SHOW_ADMIN_PASSWORD", "0").lower() in {"1", "true", "yes"}:
+        print(f"Admin login: {ADMIN_EMAIL} / {ADMIN_PASSWORD}")
+    else:
+        print(f"Admin email: {ADMIN_EMAIL}")
     server.serve_forever()
 
 

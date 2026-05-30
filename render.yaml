@@ -17,3 +17,13 @@ services:
         value: /opt/render/project/src/data
       - key: TONGPIN_COOKIE_SECURE
         value: "1"
+      - key: TONGPIN_ADMIN_EMAIL
+        sync: false
+      - key: TONGPIN_ADMIN_PASSWORD
+        sync: false
+      - key: TONGPIN_SUPPORT_WECHAT
+        sync: false
+      - key: TONGPIN_SUPPORT_HOURS
+        value: "每日 12:00 - 22:00"
+      - key: TONGPIN_SUPPORT_MESSAGE
+        sync: false

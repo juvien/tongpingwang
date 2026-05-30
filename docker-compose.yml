@@ -1,0 +1,25 @@
+services:
+  tongpin:
+    build: .
+    container_name: tongpin-h5
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8000}:8000"
+    env_file:
+      - .env
+    environment:
+      HOST: 0.0.0.0
+      PORT: 8000
+      TONGPIN_DATA_DIR: /app/data
+      TONGPIN_COOKIE_SECURE: "${TONGPIN_COOKIE_SECURE:-0}"
+    volumes:
+      - tongpin-data:/app/data
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=3).read()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  tongpin-data:

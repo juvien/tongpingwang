@@ -38,3 +38,14 @@
 - 表单消息提醒
 - 数据定期备份
 - 正式客服微信和社群 SOP
+
+## 6. 后端数据版补充
+
+如果你需要后台真实看到用户、线索、活动报名和预售记录，必须部署 `server.py`，不能只用 GitHub Pages 静态站。
+
+推荐两种方式：
+
+- Render Blueprint：使用 `render.yaml`，并确认持久化磁盘挂载到 `/opt/render/project/src/data`
+- Docker / 云服务器：使用 `Dockerfile` 和 `docker-compose.yml`，数据保存在 Docker volume `tongpin-data`
+
+详细步骤见 [后端数据版部署说明](backend-deploy.md)。

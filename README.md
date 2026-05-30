@@ -8,6 +8,7 @@
 - [商业化企划书](docs/business-plan.md)
 - [MVP 路线图](docs/mvp-roadmap.md)
 - [5 万内低成本验证版](docs/lean-5w-plan.md)
+- [后端数据版部署说明](docs/backend-deploy.md)
 
 ## H5 验证站
 
@@ -24,6 +25,15 @@
 - 会员预售页
 - 客服 / 社群承接入口
 - 最小后台管理页
+
+当前已经有两种运行形态：
+
+- 静态公开预览：适合展示和拉新，数据存在用户浏览器本地
+- 后端数据版：适合正式试运营，注册、线索、活动报名和后台数据写入服务端 SQLite 数据库
+
+静态公开预览地址：
+
+- `https://juvien.github.io/tongpingwang/`
 
 ### 本地启动
 
@@ -43,29 +53,49 @@ python3 server.py
 
 ### 生产部署
 
-仓库已经补齐基础部署文件：
+仓库已经补齐后端数据版部署文件：
 
 - [Render 蓝图配置](render.yaml)
 - [进程启动文件](Procfile)
+- [Docker 镜像配置](Dockerfile)
+- [Docker Compose 配置](docker-compose.yml)
 - [环境变量示例](.env.example)
 - [上线清单](docs/deploy-checklist.md)
+- [后端数据版部署说明](docs/backend-deploy.md)
+- [数据库备份脚本](scripts/backup_db.sh)
+- [数据库恢复脚本](scripts/restore_db.sh)
 
 默认支持以下环境变量：
 
 - `HOST`
 - `PORT`
 - `TONGPIN_DATA_DIR`
+- `TONGPIN_BACKUP_DIR`
 - `TONGPIN_ADMIN_EMAIL`
 - `TONGPIN_ADMIN_PASSWORD`
 - `TONGPIN_SUPPORT_WECHAT`
 - `TONGPIN_SUPPORT_HOURS`
 - `TONGPIN_SUPPORT_MESSAGE`
 - `TONGPIN_COOKIE_SECURE`
+- `TONGPIN_SHOW_ADMIN_PASSWORD`
 
 健康检查地址：
 
 - `GET /healthz`
 - `GET /api/health`
+
+Docker 启动：
+
+```bash
+cp .env.example .env
+docker compose up -d --build
+```
+
+备份数据库：
+
+```bash
+scripts/backup_db.sh
+```
 
 ## 项目定位
 
