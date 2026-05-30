@@ -62,10 +62,41 @@ const presaleForm = document.getElementById("presale-form");
 const activityNoteForm = document.getElementById("activity-note-form");
 const dashboardPanel = document.getElementById("dashboard-panel");
 const activityGrid = document.getElementById("activity-grid");
+const postLoginJourney = document.getElementById("post-login-journey");
+const postLoginTitle = document.getElementById("post-login-title");
+const postLoginSubtitle = document.getElementById("post-login-subtitle");
+const threadPreview = document.getElementById("thread-preview");
+
+const threadContent = {
+  profile: {
+    tab: "资料摘要",
+    title: "先把边界和兴趣说清楚",
+    body: "资料页会把你的兴趣、空闲时间、关系期待和安全边界整理成运营可读的邀请函。",
+    metrics: [["8", "个兴趣标签"], ["4", "类关系期待"], ["1", "份安全边界"]],
+  },
+  test: {
+    tab: "同频画像",
+    title: "你更适合低压、可退出的白天局",
+    body: "轻测试会把你的节奏翻译成可执行建议，比如先从摄影散步、市集巡游或展览书店开始。",
+    metrics: [["3", "个推荐现场"], ["72%", "同频概率"], ["1", "个社群入口"]],
+  },
+  event: {
+    tab: "活动建议",
+    title: "把第一次开口放进真实现场",
+    body: "城市活动会用小组制、破冰任务和人工提醒，降低陌生人第一次见面的尴尬感。",
+    metrics: [["24", "人以内小局"], ["3", "个破冰任务"], ["12h", "内客服响应"]],
+  },
+};
 
 document.querySelectorAll("[data-scroll]").forEach((button) => {
   button.addEventListener("click", () => {
     document.querySelector(button.dataset.scroll)?.scrollIntoView({ behavior: "smooth" });
+  });
+});
+
+document.querySelectorAll(".thread-toggle").forEach((button) => {
+  button.addEventListener("click", () => {
+    updateThreadPreview(button.dataset.thread);
   });
 });
 
@@ -106,6 +137,8 @@ registerForm.addEventListener("submit", async (event) => {
     state.user = result.user;
     await loadDashboard();
     syncAuthUI();
+    updatePostLoginJourney(true);
+    postLoginJourney?.scrollIntoView({ behavior: "smooth", block: "start" });
     toast("注册成功，欢迎加入同频局");
   }
 });
@@ -119,7 +152,9 @@ loginForm.addEventListener("submit", async (event) => {
     state.user = result.user;
     await loadDashboard();
     syncAuthUI();
-    toast("登录成功");
+    updatePostLoginJourney(false);
+    postLoginJourney?.scrollIntoView({ behavior: "smooth", block: "start" });
+    toast("登录成功，已为你打开下一步页面");
   }
 });
 
@@ -219,6 +254,7 @@ async function loadDashboard() {
   hydrateProfile(result.profile || {});
   renderResult(result.profile?.test_result || null);
   syncDashboardState();
+  updatePostLoginJourney(false);
 }
 
 async function loadActivities() {
@@ -229,8 +265,9 @@ async function loadActivities() {
     const tone = activityTone(activity);
     const card = document.createElement("article");
     card.className = "activity-card";
-    card.style.background = tone.background;
+    card.style.setProperty("--activity-position", tone.position);
     card.innerHTML = `
+      <img class="activity-card__image" src="static/assets/hero-v2.png" alt="${activity.title}现场氛围图" />
       <div class="activity-meta">
         <span>${activity.city}</span>
         <span>${activity.theme}</span>
@@ -279,10 +316,23 @@ async function loadSupport() {
 function syncAuthUI() {
   const loggedIn = Boolean(state.user);
   dashboardPanel.classList.toggle("hidden", !loggedIn);
+  postLoginJourney.classList.toggle("hidden", !loggedIn);
   logoutButton.classList.toggle("hidden", !loggedIn);
   adminLink.classList.toggle("hidden", !(loggedIn && state.user.role === "admin"));
   authJump.textContent = loggedIn ? "已登录" : "注册 / 登录";
   authJump.disabled = loggedIn;
+}
+
+function updatePostLoginJourney(isNewUser) {
+  if (!state.user) return;
+  const name = state.user.name || "你";
+  if (isNewUser) {
+    postLoginTitle.textContent = `${name}，欢迎你加入同频局。先完成这三步，我们就能开始给你精准匹配。`;
+    postLoginSubtitle.textContent = "你刚完成注册，建议先完善资料和测试，再去报名城市现场。";
+    return;
+  }
+  postLoginTitle.textContent = `${name}，欢迎回来，今天继续推进你的同频进度。`;
+  postLoginSubtitle.textContent = "先补全资料和测试，再去活动区挑一个你愿意参加的场景。";
 }
 
 function syncDashboardState() {
@@ -339,7 +389,7 @@ function activityTone(activity) {
   const title = `${activity.title}${activity.theme}`;
   if (title.includes("胶片") || title.includes("摄影") || title.includes("散步")) {
     return {
-      background: "linear-gradient(155deg, #3b183f, #147d75)",
+      position: "58% center",
       fit: "适合慢热、喜欢边走边聊的人",
       value: "运营会安排轻任务破冰",
       cta: "预约一个不尴尬的散步位",
@@ -347,7 +397,7 @@ function activityTone(activity) {
   }
   if (title.includes("市集")) {
     return {
-      background: "linear-gradient(155deg, #ef6f61, #8c3f61)",
+      position: "46% center",
       fit: "适合喜欢热闹但不想硬聊的人",
       value: "先逛摊，再自然组队聊天",
       cta: "报名市集轻约会",
@@ -355,18 +405,42 @@ function activityTone(activity) {
   }
   if (title.includes("livehouse") || title.includes("演出")) {
     return {
-      background: "linear-gradient(155deg, #191724, #b9824b)",
+      position: "72% center",
       fit: "适合靠歌单和现场感破冰的人",
       value: "演出前先组小队降低陌生感",
       cta: "加入演出预热小队",
     };
   }
   return {
-    background: `linear-gradient(155deg, ${activity.hero_color}, rgba(25, 23, 36, 0.95))`,
+    position: "center",
     fit: "适合想先从活动搭子开始的人",
     value: "小组制活动，节奏更友好",
     cta: "报名这个城市局",
   };
+}
+
+function updateThreadPreview(key) {
+  const content = threadContent[key] || threadContent.test;
+  document.querySelectorAll(".thread-steps article").forEach((article) => {
+    const button = article.querySelector(".thread-toggle");
+    const active = button?.dataset.thread === key;
+    article.classList.toggle("is-active", active);
+    if (button) button.textContent = active ? "×" : "+";
+  });
+  if (!threadPreview) return;
+  threadPreview.querySelector(".preview-tabs").innerHTML = `
+    <span class="${content.tab === "资料摘要" ? "is-active" : ""}">资料摘要</span>
+    <span class="${content.tab === "同频画像" ? "is-active" : ""}">同频画像</span>
+    <span class="${content.tab === "活动建议" ? "is-active" : ""}">活动建议</span>
+  `;
+  threadPreview.querySelector(".preview-card").innerHTML = `
+    <small>Engagement signal</small>
+    <strong>${content.title}</strong>
+    <p>${content.body}</p>
+  `;
+  threadPreview.querySelector(".preview-metrics").innerHTML = content.metrics
+    .map(([value, label]) => `<span><strong>${value}</strong>${label}</span>`)
+    .join("");
 }
 
 function setChecked(form, name, values) {
@@ -632,7 +706,7 @@ function toast(text) {
     background: "rgba(31, 34, 51, 0.92)",
     color: "white",
     padding: "12px 16px",
-    borderRadius: "14px",
+    borderRadius: "8px",
     zIndex: "99",
     boxShadow: "0 12px 24px rgba(0,0,0,.18)",
   });
@@ -640,4 +714,5 @@ function toast(text) {
   setTimeout(() => box.remove(), 2200);
 }
 
+updateThreadPreview("test");
 bootstrap();

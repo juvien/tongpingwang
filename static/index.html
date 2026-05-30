@@ -14,13 +14,13 @@
           <span class="brand-mark__icon">同</span>
           <div>
             <strong>同频局</strong>
-            <p>兴趣社交 · 同城活动 · 轻约会验证站</p>
+            <p>By TongPin Lab</p>
           </div>
         </a>
         <nav class="site-nav">
-          <a href="#story">为什么会心动</a>
-          <a href="#quiz">同频测试</a>
           <a href="#activities">城市现场</a>
+          <a href="#story">同频流程</a>
+          <a href="#quiz">同频测试</a>
           <a href="#presale">早鸟资格</a>
           <a href="#support">加入社群</a>
         </nav>
@@ -36,26 +36,43 @@
           <img class="hero-stage__image" src="static/assets/hero-v2.png" alt="夜晚城市音乐现场和市集里的同频相遇" />
           <div class="hero-stage__shade"></div>
           <div class="hero-stage__content">
-            <span class="eyebrow eyebrow--light">女性友好 · 亚文化兴趣社交</span>
-            <h1>同频局</h1>
-            <p>
-              给喜欢 livehouse、市集、摄影、漫展和城市散步的人，一个更自然也更安心的认识入口。
-              先看见彼此的兴趣和节奏，再决定要不要走进同一个现场。
-            </p>
-            <div class="hero-actions">
-              <button class="primary-button" data-scroll="#auth-panel">开始同频测试</button>
-              <button class="ghost-button ghost-button--light" data-scroll="#activities">浏览城市活动</button>
+            <div class="hero-copy">
+              <span class="eyebrow eyebrow--light">女性友好 · 亚文化兴趣社交</span>
+              <h1>
+                <span>真实心动</span>
+                <strong>Built with <span class="no-break">同频局.</span></strong>
+              </h1>
+              <p>
+                给喜欢 livehouse、市集、摄影、漫展和城市散步的人，一个更自然也更安心的认识入口。
+                先看见彼此的兴趣和节奏，再走进同一个现场。
+              </p>
+              <div class="hero-actions">
+                <button class="primary-button" data-scroll="#auth-panel">开始同频测试 <span aria-hidden="true">→</span></button>
+                <button class="ghost-button ghost-button--light" data-scroll="#activities">浏览城市活动</button>
+              </div>
             </div>
-            <div class="hero-proof">
-              <span>3 分钟画像</span>
-              <span>人工审核</span>
-              <span>同城小局</span>
-              <span>社群承接</span>
+
+            <div class="hero-console" aria-label="同频流程状态">
+              <div class="console-head">
+                <span class="console-icon">同</span>
+                <div>
+                  <h2>正在整理同频现场</h2>
+                  <p>预计完成时间：3 分钟</p>
+                </div>
+              </div>
+              <div class="console-list">
+                <div><span>✓</span><strong>城市标签</strong><em>已识别</em></div>
+                <div><span>✓</span><strong>资料边界</strong><em>待完善</em></div>
+                <div><span>✓</span><strong>同频画像</strong><em>待生成</em></div>
+                <div><span>✓</span><strong>活动小队</strong><em>可预约</em></div>
+                <div><span>✓</span><strong>人工确认</strong><em>社群承接</em></div>
+              </div>
             </div>
           </div>
         </section>
 
-        <section class="scene-band">
+        <section class="scene-band" aria-label="试运营城市和场景">
+          <p>现在试运行在这些真实场景里</p>
           <div class="scene-band__track">
             <span>摄影散步</span>
             <span>漫展同伴</span>
@@ -66,6 +83,25 @@
             <span>手作慢社交</span>
             <span>咖啡馆长对话</span>
           </div>
+        </section>
+
+        <section class="activities-section" id="activities">
+          <div class="section-heading">
+            <span class="eyebrow">城市现场</span>
+            <h2>把第一次见面放进一个有氛围、可退出、能自然开口的现场。</h2>
+            <p>每张活动卡都告诉你适合谁、为什么值得来、运营会怎样帮你降低尴尬感。</p>
+          </div>
+          <div class="activity-grid" id="activity-grid"></div>
+          <form class="glass-form hidden" id="activity-note-form">
+            <h3 id="activity-note-title">活动备注</h3>
+            <input type="hidden" name="activity_id" />
+            <label>
+              想让运营知道的事
+              <textarea name="note" rows="4" placeholder="比如：我更想和摄影方向的人组队，或者希望安排新手友好的小组"></textarea>
+            </label>
+            <button class="primary-button" type="submit">确认报名</button>
+            <p class="form-message" id="activity-message"></p>
+          </form>
         </section>
 
         <section class="story-grid" id="story">
@@ -88,23 +124,48 @@
 
         <section class="promise-panel">
           <div class="section-heading">
-            <span class="eyebrow">更像头部社交产品的核心转化</span>
-            <h2>先给情绪价值，再给匹配效率，最后把关系交给真实场景。</h2>
-            <p>这一版首页把“安全感、同频感、现场感”放到更前面，让用户一进来就知道这里不是泛泛聊天，而是认真筛选同城关系。</p>
+            <span class="eyebrow">How it works</span>
+            <h2>从测试到见面，像一条连续的线，而不是一堆孤立按钮。</h2>
+            <p>同频局把资料、测试、活动和人工社群承接连起来，让每一步都能自然推进到下一步。</p>
           </div>
-          <div class="quote-grid">
-            <article class="quote-card">
-              <strong>被看见</strong>
-              <p>“我想被理解的，不只是头像和年龄，而是我为什么会为一场演出、一卷胶片、一家书店心动。”</p>
-            </article>
-            <article class="quote-card">
-              <strong>不被打扰</strong>
-              <p>“我希望认识人之前，能先确认对方的边界、节奏和目的，不用在低质量私信里消耗自己。”</p>
-            </article>
-            <article class="quote-card">
-              <strong>走到线下</strong>
-              <p>“如果真的聊得来，我更想有一个自然见面的理由，而不是一直停在聊天框里互相试探。”</p>
-            </article>
+          <div class="thread-layout">
+            <div class="thread-steps">
+              <article>
+                <button class="thread-toggle" type="button" data-thread="profile">+</button>
+                <span>Capture without pressure</span>
+                <h3>先把边界和兴趣说清楚</h3>
+                <p>资料页不是社交简历，而是一张能让运营理解你的邀请函。</p>
+              </article>
+              <article>
+                <button class="thread-toggle" type="button" data-thread="test">+</button>
+                <span>Match without guessing</span>
+                <h3>用轻测试减少随机匹配</h3>
+                <p>3 分钟生成关系开场建议，告诉你更适合哪一种现场和节奏。</p>
+              </article>
+              <article>
+                <button class="thread-toggle" type="button" data-thread="event">+</button>
+                <span>Meet without awkwardness</span>
+                <h3>把见面放进城市现场</h3>
+                <p>通过小组活动、破冰任务和社群承接，让第一次开口更轻。</p>
+              </article>
+            </div>
+            <div class="thread-preview" id="thread-preview">
+              <div class="preview-tabs">
+                <span>资料摘要</span>
+                <span class="is-active">同频画像</span>
+                <span>活动建议</span>
+              </div>
+              <div class="preview-card">
+                <small>Engagement signal</small>
+                <strong>你更适合低压、可退出的白天局</strong>
+                <p>建议先从摄影散步、市集巡游或展览书店开始，避免直接进入高压一对一。</p>
+              </div>
+              <div class="preview-metrics">
+                <span><strong>3</strong> 个推荐现场</span>
+                <span><strong>72%</strong> 同频概率</span>
+                <span><strong>1</strong> 个社群入口</span>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -202,6 +263,34 @@
                 <span>当前同频画像</span>
               </article>
             </div>
+          </div>
+        </section>
+
+        <section class="post-login-journey hidden" id="post-login-journey">
+          <div class="section-heading">
+            <span class="eyebrow">已进入同频流程</span>
+            <h2 id="post-login-title">欢迎回来，下一步我们一起把“同频感”落到可执行动作。</h2>
+            <p id="post-login-subtitle">完成下面三步后，你会收到更精准的活动推荐和人工撮合优先级。</p>
+          </div>
+          <div class="journey-grid">
+            <article class="journey-card">
+              <strong>01</strong>
+              <h3>完善资料页</h3>
+              <p>先写清楚兴趣、边界和见面节奏，避免低质量打扰。</p>
+              <button class="ghost-button" data-scroll="#profile">去完善资料</button>
+            </article>
+            <article class="journey-card">
+              <strong>02</strong>
+              <h3>完成同频测试</h3>
+              <p>3 分钟生成你的同频画像，系统才能给你正确人群。</p>
+              <button class="ghost-button" data-scroll="#quiz">去做测试</button>
+            </article>
+            <article class="journey-card">
+              <strong>03</strong>
+              <h3>预约城市活动</h3>
+              <p>把第一次认识放进真实场景，运营会协助你低压破冰。</p>
+              <button class="ghost-button" data-scroll="#activities">去看活动</button>
+            </article>
           </div>
         </section>
 
@@ -413,25 +502,6 @@
             </label>
             <button class="primary-button full-span" type="submit">提交匹配意向</button>
             <p class="form-message full-span" id="intent-message"></p>
-          </form>
-        </section>
-
-        <section class="activities-section" id="activities">
-          <div class="section-heading">
-            <span class="eyebrow">城市现场</span>
-            <h2>把第一次见面放进一个有氛围、可退出、能自然开口的现场。</h2>
-            <p>每张活动卡都告诉你适合谁、为什么值得来、运营会怎样帮你降低尴尬感。</p>
-          </div>
-          <div class="activity-grid" id="activity-grid"></div>
-          <form class="glass-form hidden" id="activity-note-form">
-            <h3 id="activity-note-title">活动备注</h3>
-            <input type="hidden" name="activity_id" />
-            <label>
-              想让运营知道的事
-              <textarea name="note" rows="4" placeholder="比如：我更想和摄影方向的人组队，或者希望安排新手友好的小组"></textarea>
-            </label>
-            <button class="primary-button" type="submit">确认报名</button>
-            <p class="form-message" id="activity-message"></p>
           </form>
         </section>
 
