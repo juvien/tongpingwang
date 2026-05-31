@@ -97,6 +97,37 @@ RestartSec=3
 WantedBy=multi-user.target
 EOF
 
+echo "Synchronizing admin login..."
+set -a
+. /etc/tongpinwang.env
+set +a
+python3 - <<'PY'
+from server import ADMIN_EMAIL, ADMIN_PASSWORD, DB_PATH, hash_password, init_db, now_iso
+
+init_db()
+conn = __import__("sqlite3").connect(str(DB_PATH))
+created = now_iso()
+admin = conn.execute("SELECT id FROM users WHERE email = ?", (ADMIN_EMAIL,)).fetchone()
+if admin:
+    conn.execute(
+        "UPDATE users SET password_hash = ?, role = 'admin' WHERE email = ?",
+        (hash_password(ADMIN_PASSWORD), ADMIN_EMAIL),
+    )
+else:
+    cursor = conn.execute(
+        "INSERT INTO users (name, email, password_hash, city, role, created_at) VALUES (?, ?, ?, ?, 'admin', ?)",
+        ("管理员", ADMIN_EMAIL, hash_password(ADMIN_PASSWORD), "上海", created),
+    )
+    conn.execute(
+        """INSERT INTO profiles (
+            user_id, nickname, city, goals_json, interests_json, primary_tags, updated_at, review_status, match_status
+        ) VALUES (?, ?, ?, '[]', '[]', ?, ?, 'approved', 'active')""",
+        (cursor.lastrowid, "后台管理员", "上海", "运营,审核", created),
+    )
+conn.commit()
+conn.close()
+PY
+
 systemctl daemon-reload
 systemctl enable tongpinwang
 systemctl restart tongpinwang

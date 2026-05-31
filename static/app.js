@@ -19,6 +19,7 @@ const demoActivities = [
     capacity: 18,
     signup_count: 7,
     description: "适合喜欢胶片、咖啡和慢节奏散步的同城认识活动，现场会有破冰卡和双人拍照任务。",
+    image: "assets/activity-film-walk.jpg",
     hero_color: "#ff7d66",
   },
   {
@@ -32,6 +33,7 @@ const demoActivities = [
     capacity: 24,
     signup_count: 11,
     description: "围绕手作摊位、城市音乐和同频问答展开，适合第一次认识的人自然聊天。",
+    image: "assets/activity-night-market.jpg",
     hero_color: "#0f8f84",
   },
   {
@@ -45,6 +47,7 @@ const demoActivities = [
     capacity: 16,
     signup_count: 6,
     description: "用歌单和现场偏好破冰，先认识一小队愿意一起去现场的人。",
+    image: "assets/activity-livehouse.jpg",
     hero_color: "#b9824b",
   },
 ];
@@ -266,8 +269,9 @@ async function loadActivities() {
     const card = document.createElement("article");
     card.className = "activity-card";
     card.style.setProperty("--activity-position", tone.position);
+    const imageSrc = activity.image || tone.image;
     card.innerHTML = `
-      <img class="activity-card__image" src="static/assets/hero-v2.png" alt="${activity.title}现场氛围图" />
+      <img class="activity-card__image" src="${imageSrc}" alt="${activity.title}现场氛围图" />
       <div class="activity-meta">
         <span>${activity.city}</span>
         <span>${activity.theme}</span>
@@ -389,6 +393,7 @@ function activityTone(activity) {
   const title = `${activity.title}${activity.theme}`;
   if (title.includes("胶片") || title.includes("摄影") || title.includes("散步")) {
     return {
+      image: "assets/activity-film-walk.jpg",
       position: "58% center",
       fit: "适合慢热、喜欢边走边聊的人",
       value: "运营会安排轻任务破冰",
@@ -397,6 +402,7 @@ function activityTone(activity) {
   }
   if (title.includes("市集")) {
     return {
+      image: "assets/activity-night-market.jpg",
       position: "46% center",
       fit: "适合喜欢热闹但不想硬聊的人",
       value: "先逛摊，再自然组队聊天",
@@ -405,6 +411,7 @@ function activityTone(activity) {
   }
   if (title.includes("livehouse") || title.includes("演出")) {
     return {
+      image: "assets/activity-livehouse.jpg",
       position: "72% center",
       fit: "适合靠歌单和现场感破冰的人",
       value: "演出前先组小队降低陌生感",
@@ -412,6 +419,7 @@ function activityTone(activity) {
     };
   }
   return {
+    image: "assets/hero-v2.png",
     position: "center",
     fit: "适合想先从活动搭子开始的人",
     value: "小组制活动，节奏更友好",

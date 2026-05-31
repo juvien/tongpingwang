@@ -302,7 +302,7 @@ class AppHandler(BaseHTTPRequestHandler):
         path = parsed.path
         if path == "/":
             return self.head_static("index.html")
-        if path == "/admin":
+        if path in {"/admin", "/admin/"}:
             return self.head_static("admin.html")
         if path == "/favicon.ico":
             return self.head_static("assets/favicon.svg")
@@ -314,6 +314,10 @@ class AppHandler(BaseHTTPRequestHandler):
             return
         if path.startswith("/static/"):
             return self.head_static(path.replace("/static/", "", 1))
+        if path in {"/styles.css", "/app.js", "/admin.js"}:
+            return self.head_static(path.lstrip("/"))
+        if path.startswith("/assets/"):
+            return self.head_static(path.lstrip("/"))
         self.send_error(HTTPStatus.NOT_FOUND, "Not found")
 
     def do_OPTIONS(self):
@@ -338,6 +342,10 @@ class AppHandler(BaseHTTPRequestHandler):
             return self.send_health()
         if path.startswith("/static/"):
             return self.serve_static(path.replace("/static/", "", 1))
+        if path in {"/styles.css", "/app.js", "/admin.js"}:
+            return self.serve_static(path.lstrip("/"))
+        if path.startswith("/assets/"):
+            return self.serve_static(path.lstrip("/"))
 
         if path == "/api/auth/me":
             return self.handle_me()
