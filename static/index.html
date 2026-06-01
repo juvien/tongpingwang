@@ -9,6 +9,7 @@
   </head>
   <body>
     <div class="page-shell">
+      <div class="scroll-progress" id="scroll-progress" aria-hidden="true"></div>
       <header class="site-header">
         <a class="brand-mark" href="#top">
           <span class="brand-mark__icon">同</span>
@@ -55,6 +56,11 @@
                 <span>女性友好边界</span>
                 <span>同城小局承接</span>
               </div>
+              <div class="hero-stats" aria-label="同频局试运营指标">
+                <span><strong>5 分钟</strong>完成同频测试</span>
+                <span><strong>24 人内</strong>女性友好小局</span>
+                <span><strong>1 对 1</strong>人工社群承接</span>
+              </div>
             </div>
           </div>
         </section>
@@ -80,16 +86,6 @@
             <p>每张活动卡都告诉你适合谁、为什么值得来、运营会怎样帮你降低尴尬感。</p>
           </div>
           <div class="activity-grid" id="activity-grid"></div>
-          <form class="glass-form hidden" id="activity-note-form">
-            <h3 id="activity-note-title">活动备注</h3>
-            <input type="hidden" name="activity_id" />
-            <label>
-              想让运营知道的事
-              <textarea name="note" rows="4" placeholder="比如：我更想和摄影方向的人组队，或者希望安排新手友好的小组"></textarea>
-            </label>
-            <button class="primary-button" type="submit">确认报名</button>
-            <p class="form-message" id="activity-message"></p>
-          </form>
         </section>
 
         <section class="story-grid" id="story">
@@ -187,6 +183,16 @@
 
         <section class="dashboard-grid">
           <div class="auth-panel" id="auth-panel">
+            <div class="auth-intro">
+              <span class="eyebrow">从这里开始</span>
+              <h2>先留下一个真实入口，再慢慢靠近对的人。</h2>
+              <p>注册后可以保存资料、生成同频画像、报名城市现场。所有资料默认进入审核和运营承接，不会直接公开展示。</p>
+              <div class="auth-proof">
+                <span>不公开手机号</span>
+                <span>可随时退出</span>
+                <span>活动前人工提醒</span>
+              </div>
+            </div>
             <div class="auth-tabs">
               <button class="auth-tab is-active" data-auth-tab="register">注册</button>
               <button class="auth-tab" data-auth-tab="login">登录</button>
@@ -202,7 +208,10 @@
               </label>
               <label>
                 密码
-                <input name="password" type="password" placeholder="至少 6 位" required />
+                <span class="password-field">
+                  <input name="password" type="password" placeholder="至少 6 位" required />
+                  <button type="button" data-password-toggle>显示</button>
+                </span>
               </label>
               <label>
                 城市
@@ -218,7 +227,10 @@
               </label>
               <label>
                 密码
-                <input name="password" type="password" placeholder="请输入密码" required />
+                <span class="password-field">
+                  <input name="password" type="password" placeholder="请输入密码" required />
+                  <button type="button" data-password-toggle>显示</button>
+                </span>
               </label>
               <button class="primary-button" type="submit">登录</button>
               <p class="form-message" id="login-message"></p>
@@ -545,6 +557,46 @@
           </div>
         </section>
       </main>
+
+      <div class="activity-drawer hidden" id="activity-drawer" aria-hidden="true">
+        <button class="activity-drawer__backdrop" type="button" data-close-activity aria-label="关闭活动详情"></button>
+        <aside class="activity-drawer__panel" role="dialog" aria-modal="true" aria-labelledby="activity-drawer-title">
+          <button class="drawer-close" type="button" data-close-activity aria-label="关闭活动详情">×</button>
+          <span class="eyebrow" id="activity-drawer-kicker">城市现场</span>
+          <h3 id="activity-drawer-title">活动详情</h3>
+          <p id="activity-drawer-desc">选择一个你愿意走进去的现场，运营会帮你把第一次开口变轻一点。</p>
+          <div class="activity-drawer__meta" id="activity-drawer-meta"></div>
+          <div class="activity-drawer__promise">
+            <article>
+              <strong>适合谁</strong>
+              <p id="activity-drawer-fit">适合想先从活动搭子开始的人。</p>
+            </article>
+            <article>
+              <strong>怎么破冰</strong>
+              <p id="activity-drawer-value">小组制活动，现场会有轻任务。</p>
+            </article>
+            <article>
+              <strong>安全边界</strong>
+              <p>公开场地、小组入场、活动前后都可联系运营。</p>
+            </article>
+          </div>
+          <form class="glass-form" id="activity-note-form">
+            <h4 id="activity-note-title">活动备注</h4>
+            <input type="hidden" name="activity_id" />
+            <label>
+              想让运营知道的事
+              <textarea name="note" rows="4" placeholder="比如：我更想和摄影方向的人组队，或者希望安排新手友好的小组"></textarea>
+            </label>
+            <button class="primary-button" type="submit">确认报名，让运营联系我</button>
+            <p class="form-message" id="activity-message"></p>
+          </form>
+        </aside>
+      </div>
+
+      <div class="sticky-conversion" id="sticky-conversion" aria-label="快捷操作">
+        <span>想先看看自己适合哪种现场？</span>
+        <button class="primary-button" data-scroll="#auth-panel">开始 3 分钟测试</button>
+      </div>
     </div>
 
     <script src="app.js"></script>

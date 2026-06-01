@@ -3,6 +3,7 @@ const state = {
   profile: null,
   activities: [],
   selectedActivityId: null,
+  selectedActivity: null,
   staticMode: location.protocol === "file:" || location.hostname.endsWith("github.io"),
 };
 
@@ -69,6 +70,9 @@ const postLoginJourney = document.getElementById("post-login-journey");
 const postLoginTitle = document.getElementById("post-login-title");
 const postLoginSubtitle = document.getElementById("post-login-subtitle");
 const threadPreview = document.getElementById("thread-preview");
+const activityDrawer = document.getElementById("activity-drawer");
+const scrollProgress = document.getElementById("scroll-progress");
+const navLinks = Array.from(document.querySelectorAll(".site-nav a"));
 
 const threadContent = {
   profile: {
@@ -96,6 +100,26 @@ document.querySelectorAll("[data-scroll]").forEach((button) => {
     document.querySelector(button.dataset.scroll)?.scrollIntoView({ behavior: "smooth" });
   });
 });
+
+document.querySelectorAll("[data-password-toggle]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const input = button.parentElement?.querySelector("input");
+    if (!input) return;
+    const visible = input.type === "text";
+    input.type = visible ? "password" : "text";
+    button.textContent = visible ? "显示" : "隐藏";
+  });
+});
+
+document.querySelectorAll("[data-close-activity]").forEach((button) => {
+  button.addEventListener("click", closeActivityDrawer);
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeActivityDrawer();
+});
+
+window.addEventListener("scroll", updateScrollState, { passive: true });
 
 document.querySelectorAll(".thread-toggle").forEach((button) => {
   button.addEventListener("click", () => {
@@ -224,7 +248,11 @@ presaleForm.addEventListener("submit", async (event) => {
 
 activityNoteForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  if (!ensureLogin("请先注册或登录，再报名活动。")) return;
+  if (!state.user) {
+    closeActivityDrawer();
+    ensureLogin("请先注册或登录，再报名活动。");
+    return;
+  }
   const formData = new FormData(activityNoteForm);
   const activityId = formData.get("activity_id");
   const note = formData.get("note");
@@ -232,7 +260,7 @@ activityNoteForm.addEventListener("submit", async (event) => {
   if (result?.ok) {
     setMessage("activity-message", "活动报名成功，运营会在社群里和你对接。", true);
     activityNoteForm.reset();
-    activityNoteForm.classList.add("hidden");
+    setTimeout(closeActivityDrawer, 900);
     await loadDashboard();
   }
 });
@@ -246,6 +274,9 @@ async function bootstrap() {
     await loadDashboard();
   }
   syncAuthUI();
+  setupReveals();
+  setupActiveNav();
+  updateScrollState();
 }
 
 async function loadDashboard() {
@@ -268,6 +299,8 @@ async function loadActivities() {
     const tone = activityTone(activity);
     const card = document.createElement("article");
     card.className = "activity-card";
+    card.tabIndex = 0;
+    card.dataset.reveal = "";
     card.style.setProperty("--activity-position", tone.position);
     const imageSrc = activity.image || tone.image;
     card.innerHTML = `
@@ -293,11 +326,17 @@ async function loadActivities() {
       <button class="ghost-button activity-apply">${tone.cta}</button>
     `;
     card.querySelector(".activity-apply").addEventListener("click", () => {
-      if (!ensureLogin("请先注册或登录，再报名活动。")) return;
-      document.getElementById("activity-note-title").textContent = `报名活动：${activity.title}`;
-      activityNoteForm.querySelector('input[name="activity_id"]').value = activity.id;
-      activityNoteForm.classList.remove("hidden");
-      activityNoteForm.scrollIntoView({ behavior: "smooth" });
+      openActivityDrawer(activity, tone);
+    });
+    card.addEventListener("click", (event) => {
+      if (event.target.closest(".activity-apply")) return;
+      openActivityDrawer(activity, tone);
+    });
+    card.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openActivityDrawer(activity, tone);
+      }
     });
     activityGrid.appendChild(card);
   });
@@ -319,12 +358,90 @@ async function loadSupport() {
 
 function syncAuthUI() {
   const loggedIn = Boolean(state.user);
+  document.body.classList.toggle("is-logged-in", loggedIn);
   dashboardPanel.classList.toggle("hidden", !loggedIn);
   postLoginJourney.classList.toggle("hidden", !loggedIn);
   logoutButton.classList.toggle("hidden", !loggedIn);
   adminLink.classList.toggle("hidden", !(loggedIn && state.user.role === "admin"));
   authJump.textContent = loggedIn ? "已登录" : "注册 / 登录";
   authJump.disabled = loggedIn;
+}
+
+function openActivityDrawer(activity, tone) {
+  if (!activityDrawer) return;
+  state.selectedActivity = activity;
+  state.selectedActivityId = activity.id;
+  document.getElementById("activity-drawer-kicker").textContent = `${activity.city} · ${activity.theme}`;
+  document.getElementById("activity-drawer-title").textContent = activity.title;
+  document.getElementById("activity-drawer-desc").textContent = activity.description;
+  document.getElementById("activity-drawer-fit").textContent = tone.fit;
+  document.getElementById("activity-drawer-value").textContent = tone.value;
+  document.getElementById("activity-note-title").textContent = `报名活动：${activity.title}`;
+  activityNoteForm.querySelector('input[name="activity_id"]').value = activity.id;
+  document.getElementById("activity-drawer-meta").innerHTML = [activity.city, activity.date_label, activity.location, `¥${activity.price}`, `${activity.signup_count}/${activity.capacity} 已报名`]
+    .map((item) => `<span>${item}</span>`)
+    .join("");
+  setMessage("activity-message", "");
+  activityDrawer.classList.remove("hidden");
+  activityDrawer.setAttribute("aria-hidden", "false");
+  document.body.classList.add("has-drawer");
+  activityNoteForm.querySelector("textarea")?.focus();
+}
+
+function closeActivityDrawer() {
+  if (!activityDrawer || activityDrawer.classList.contains("hidden")) return;
+  activityDrawer.classList.add("hidden");
+  activityDrawer.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("has-drawer");
+}
+
+function updateScrollState() {
+  const max = document.documentElement.scrollHeight - window.innerHeight;
+  const progress = max > 0 ? Math.min(100, Math.max(0, (window.scrollY / max) * 100)) : 0;
+  if (scrollProgress) scrollProgress.style.width = `${progress}%`;
+  document.body.classList.toggle("is-scrolled", window.scrollY > 90);
+}
+
+function setupReveals() {
+  const targets = Array.from(
+    document.querySelectorAll(".scene-band, .activities-section, .story-card, .promise-panel, .split-panel, .dashboard-grid, .form-section, .result-card, .support-section, [data-reveal]")
+  );
+  targets.forEach((target) => {
+    if (!target.dataset.reveal) target.dataset.reveal = "";
+  });
+  if (!("IntersectionObserver" in window)) {
+    targets.forEach((target) => target.classList.add("is-visible"));
+    return;
+  }
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("is-visible");
+        observer.unobserve(entry.target);
+      });
+    },
+    { threshold: 0.12 }
+  );
+  targets.forEach((target) => observer.observe(target));
+}
+
+function setupActiveNav() {
+  const sections = navLinks.map((link) => document.querySelector(link.getAttribute("href"))).filter(Boolean);
+  if (!("IntersectionObserver" in window) || !sections.length) return;
+  const observer = new IntersectionObserver(
+    (entries) => {
+      const active = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]?.target;
+      if (!active) return;
+      navLinks.forEach((link) => {
+        link.classList.toggle("is-active", link.getAttribute("href") === `#${active.id}`);
+      });
+    },
+    { rootMargin: "-38% 0px -48% 0px", threshold: [0.1, 0.35, 0.6] }
+  );
+  sections.forEach((section) => observer.observe(section));
 }
 
 function updatePostLoginJourney(isNewUser) {
