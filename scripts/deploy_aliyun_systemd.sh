@@ -4,13 +4,15 @@ set -euo pipefail
 SERVER_HOST="${SERVER_HOST:-39.103.91.85}"
 SERVER_USER="${SERVER_USER:-root}"
 APP_DIR="${APP_DIR:-/opt/tongpinwang}"
-APP_PORT="${APP_PORT:-80}"
+APP_HOST="${APP_HOST:-127.0.0.1}"
+APP_PORT="${APP_PORT:-8000}"
+PUBLIC_URL="${PUBLIC_URL:-https://tongpinju.39.103.91.85.nip.io}"
 ADMIN_EMAIL="${TONGPIN_ADMIN_EMAIL:-admin@tongpin.local}"
 ADMIN_PASSWORD="${TONGPIN_ADMIN_PASSWORD:-}"
 SUPPORT_WECHAT="${TONGPIN_SUPPORT_WECHAT:-TongPinClub}"
 SUPPORT_HOURS="${TONGPIN_SUPPORT_HOURS:-每日 12:00 - 22:00}"
 SUPPORT_MESSAGE="${TONGPIN_SUPPORT_MESSAGE:-添加客服后备注“同频局”，我们会把你拉入对应城市的兴趣社群。}"
-COOKIE_SECURE="${TONGPIN_COOKIE_SECURE:-0}"
+COOKIE_SECURE="${TONGPIN_COOKIE_SECURE:-1}"
 SSH_KEY="${SSH_KEY:-}"
 SSH_OPTS="${SSH_OPTS:-}"
 
@@ -55,7 +57,7 @@ scp "${SSH_ARGS[@]}" "${TMP_ARCHIVE}" "${SERVER_USER}@${SERVER_HOST}:${APP_DIR}/
 
 echo "Deploying systemd service..."
 ssh "${SSH_ARGS[@]}" "${SERVER_USER}@${SERVER_HOST}" \
-  "APP_DIR='${APP_DIR}' APP_PORT='${APP_PORT}' ADMIN_EMAIL='${ADMIN_EMAIL}' ADMIN_PASSWORD='${ADMIN_PASSWORD}' SUPPORT_WECHAT='${SUPPORT_WECHAT}' SUPPORT_HOURS='${SUPPORT_HOURS}' SUPPORT_MESSAGE='${SUPPORT_MESSAGE}' COOKIE_SECURE='${COOKIE_SECURE}' bash -s" <<'REMOTE'
+  "APP_DIR='${APP_DIR}' APP_HOST='${APP_HOST}' APP_PORT='${APP_PORT}' ADMIN_EMAIL='${ADMIN_EMAIL}' ADMIN_PASSWORD='${ADMIN_PASSWORD}' SUPPORT_WECHAT='${SUPPORT_WECHAT}' SUPPORT_HOURS='${SUPPORT_HOURS}' SUPPORT_MESSAGE='${SUPPORT_MESSAGE}' COOKIE_SECURE='${COOKIE_SECURE}' bash -s" <<'REMOTE'
 set -euo pipefail
 
 cd "${APP_DIR}"
@@ -67,7 +69,7 @@ find "${APP_DIR}" -name '._*' -delete
 mkdir -p "${APP_DIR}/data" "${APP_DIR}/backups"
 
 cat > /etc/tongpinwang.env <<EOF
-HOST=0.0.0.0
+HOST=${APP_HOST}
 PORT=${APP_PORT}
 TONGPIN_DATA_DIR=${APP_DIR}/data
 TONGPIN_BACKUP_DIR=${APP_DIR}/backups
@@ -146,7 +148,7 @@ REMOTE
 
 echo
 echo "Deployment complete."
-echo "Public URL: http://${SERVER_HOST}/"
-echo "Admin URL:  http://${SERVER_HOST}/admin"
+echo "Public URL: ${PUBLIC_URL}/"
+echo "Admin URL:  ${PUBLIC_URL}/admin"
 echo "Admin email: ${ADMIN_EMAIL}"
 echo "Admin password: ${ADMIN_PASSWORD}"
