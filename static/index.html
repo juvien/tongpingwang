@@ -294,6 +294,52 @@
           </div>
         </section>
 
+        <section class="social-hub hidden" id="social-hub">
+          <div class="section-heading">
+            <span class="eyebrow">同频大厅</span>
+            <h2>登录之后，不只是填表，而是能开始看见真实的人。</h2>
+            <p>你可以搜索同城用户、浏览兴趣画像、发送好友申请。通过后就能在站内开始第一段低压聊天。</p>
+          </div>
+          <form class="social-search" id="social-search-form">
+            <input name="search" placeholder="搜索昵称 / 兴趣 / 自我介绍" />
+            <input name="city" placeholder="城市，比如 上海" />
+            <input name="tag" placeholder="兴趣，比如 摄影 / 市集" />
+            <button class="primary-button" type="submit">搜索同频用户</button>
+          </form>
+          <div class="social-layout">
+            <div class="social-main">
+              <div class="social-panel-head">
+                <div>
+                  <span class="eyebrow">Browse</span>
+                  <h3>推荐用户</h3>
+                </div>
+                <button class="ghost-button" id="social-refresh" type="button">刷新</button>
+              </div>
+              <div class="social-grid" id="social-user-grid"></div>
+            </div>
+            <aside class="relation-panel">
+              <div class="social-panel-head">
+                <div>
+                  <span class="eyebrow">Friends</span>
+                  <h3>好友和申请</h3>
+                </div>
+              </div>
+              <div class="relation-block">
+                <h4>待你回应</h4>
+                <div class="relation-list" id="incoming-requests"></div>
+              </div>
+              <div class="relation-block">
+                <h4>已发送申请</h4>
+                <div class="relation-list" id="outgoing-requests"></div>
+              </div>
+              <div class="relation-block">
+                <h4>我的好友</h4>
+                <div class="relation-list" id="friend-list"></div>
+              </div>
+            </aside>
+          </div>
+        </section>
+
         <section class="form-section" id="profile">
           <div class="section-heading">
             <span class="eyebrow">个人资料收集</span>
@@ -596,6 +642,23 @@
       <div class="sticky-conversion" id="sticky-conversion" aria-label="快捷操作">
         <span>想先看看自己适合哪种现场？</span>
         <button class="primary-button" data-scroll="#auth-panel">开始 3 分钟测试</button>
+      </div>
+
+      <div class="chat-drawer hidden" id="chat-drawer" aria-hidden="true">
+        <button class="activity-drawer__backdrop" type="button" data-close-chat aria-label="关闭聊天"></button>
+        <aside class="chat-drawer__panel" role="dialog" aria-modal="true" aria-labelledby="chat-title">
+          <button class="drawer-close" type="button" data-close-chat aria-label="关闭聊天">×</button>
+          <span class="eyebrow">站内聊天</span>
+          <h3 id="chat-title">和好友聊天</h3>
+          <p id="chat-subtitle">先从共同兴趣开始，保持低压、清晰、尊重边界。</p>
+          <div class="chat-messages" id="chat-messages"></div>
+          <form class="chat-form" id="chat-form">
+            <input type="hidden" name="receiver_id" />
+            <textarea name="body" rows="3" placeholder="比如：我也喜欢这个活动，想问问你平时更常去哪个现场？" required></textarea>
+            <button class="primary-button" type="submit">发送消息</button>
+            <p class="form-message" id="chat-message"></p>
+          </form>
+        </aside>
       </div>
     </div>
 

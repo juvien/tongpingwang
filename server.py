@@ -218,6 +218,30 @@ def init_db():
             created_at TEXT NOT NULL,
             FOREIGN KEY(user_id) REFERENCES users(id)
         );
+
+        CREATE TABLE IF NOT EXISTS friend_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            requester_id INTEGER NOT NULL,
+            addressee_id INTEGER NOT NULL,
+            status TEXT NOT NULL DEFAULT 'pending',
+            message TEXT DEFAULT '',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            UNIQUE(requester_id, addressee_id),
+            FOREIGN KEY(requester_id) REFERENCES users(id),
+            FOREIGN KEY(addressee_id) REFERENCES users(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sender_id INTEGER NOT NULL,
+            receiver_id INTEGER NOT NULL,
+            body TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            read_at TEXT,
+            FOREIGN KEY(sender_id) REFERENCES users(id),
+            FOREIGN KEY(receiver_id) REFERENCES users(id)
+        );
         """
     )
 
@@ -355,6 +379,12 @@ class AppHandler(BaseHTTPRequestHandler):
             return self.handle_activities()
         if path == "/api/support":
             return self.handle_support()
+        if path == "/api/social/users":
+            return self.handle_social_users(parsed.query)
+        if path == "/api/social/relations":
+            return self.handle_social_relations()
+        if path == "/api/social/messages":
+            return self.handle_social_messages(parsed.query)
         if path == "/api/health":
             return self.handle_api_health()
         if path == "/api/admin/overview":
@@ -392,6 +422,12 @@ class AppHandler(BaseHTTPRequestHandler):
             return self.handle_match_intent()
         if path == "/api/presales":
             return self.handle_presale_submit()
+        if path == "/api/social/friends/request":
+            return self.handle_friend_request()
+        if path == "/api/social/friends/respond":
+            return self.handle_friend_respond()
+        if path == "/api/social/messages":
+            return self.handle_message_submit()
         if path.startswith("/api/activities/") and path.endswith("/signup"):
             activity_id = path.split("/")[3]
             return self.handle_activity_signup(activity_id)
@@ -848,6 +884,232 @@ class AppHandler(BaseHTTPRequestHandler):
         conn.close()
         return self.send_json(HTTPStatus.CREATED, {"ok": True})
 
+    def handle_social_users(self, query_string):
+        conn = db_conn()
+        user = self.require_auth(conn)
+        if not user:
+            conn.close()
+            return
+        query = parse_qs(query_string)
+        search = query.get("search", [""])[0].strip()
+        city = query.get("city", [""])[0].strip()
+        tag = query.get("tag", [""])[0].strip()
+        sql = """
+            SELECT users.id, users.name, users.city, users.created_at,
+                   profiles.nickname, profiles.bio, profiles.goals_json, profiles.interests_json,
+                   profiles.primary_tags, profiles.communication_style, profiles.favorite_scene,
+                   profiles.availability, profiles.test_result_json, profiles.review_status
+            FROM users
+            JOIN profiles ON profiles.user_id = users.id
+            WHERE users.role = 'user' AND users.id != ? AND profiles.review_status != 'flagged'
+        """
+        params = [user["id"]]
+        if search:
+            wildcard = f"%{search}%"
+            sql += " AND (users.name LIKE ? OR users.city LIKE ? OR profiles.bio LIKE ? OR profiles.primary_tags LIKE ?)"
+            params.extend([wildcard, wildcard, wildcard, wildcard])
+        if city:
+            sql += " AND users.city LIKE ?"
+            params.append(f"%{city}%")
+        if tag:
+            sql += " AND profiles.primary_tags LIKE ?"
+            params.append(f"%{tag}%")
+        sql += " ORDER BY profiles.review_status = 'approved' DESC, users.created_at DESC LIMIT 80"
+        rows = conn.execute(sql, params).fetchall()
+        relations = self.social_relation_map(conn, user["id"])
+        conn.close()
+        return self.send_json(
+            HTTPStatus.OK,
+            {"users": [self.serialize_social_user(row, relations.get(row["id"], "none")) for row in rows]},
+        )
+
+    def handle_social_relations(self):
+        conn = db_conn()
+        user = self.require_auth(conn)
+        if not user:
+            conn.close()
+            return
+        current_id = user["id"]
+        incoming = conn.execute(
+            """
+            SELECT fr.id AS request_id, fr.message, fr.created_at,
+                   users.id, users.name, users.city, profiles.nickname, profiles.bio,
+                   profiles.interests_json, profiles.primary_tags, profiles.favorite_scene,
+                   profiles.test_result_json, profiles.review_status
+            FROM friend_requests fr
+            JOIN users ON users.id = fr.requester_id
+            JOIN profiles ON profiles.user_id = users.id
+            WHERE fr.addressee_id = ? AND fr.status = 'pending'
+            ORDER BY fr.created_at DESC
+            """,
+            (current_id,),
+        ).fetchall()
+        outgoing = conn.execute(
+            """
+            SELECT fr.id AS request_id, fr.message, fr.created_at,
+                   users.id, users.name, users.city, profiles.nickname, profiles.bio,
+                   profiles.interests_json, profiles.primary_tags, profiles.favorite_scene,
+                   profiles.test_result_json, profiles.review_status
+            FROM friend_requests fr
+            JOIN users ON users.id = fr.addressee_id
+            JOIN profiles ON profiles.user_id = users.id
+            WHERE fr.requester_id = ? AND fr.status = 'pending'
+            ORDER BY fr.created_at DESC
+            """,
+            (current_id,),
+        ).fetchall()
+        friends = conn.execute(
+            """
+            SELECT fr.id AS request_id, fr.updated_at,
+                   users.id, users.name, users.city, profiles.nickname, profiles.bio,
+                   profiles.interests_json, profiles.primary_tags, profiles.favorite_scene,
+                   profiles.test_result_json, profiles.review_status
+            FROM friend_requests fr
+            JOIN users ON users.id = CASE WHEN fr.requester_id = ? THEN fr.addressee_id ELSE fr.requester_id END
+            JOIN profiles ON profiles.user_id = users.id
+            WHERE (fr.requester_id = ? OR fr.addressee_id = ?) AND fr.status = 'accepted'
+            ORDER BY fr.updated_at DESC
+            """,
+            (current_id, current_id, current_id),
+        ).fetchall()
+        conn.close()
+        return self.send_json(
+            HTTPStatus.OK,
+            {
+                "incoming": [self.serialize_social_user(row, "incoming") for row in incoming],
+                "outgoing": [self.serialize_social_user(row, "requested") for row in outgoing],
+                "friends": [self.serialize_social_user(row, "friend") for row in friends],
+            },
+        )
+
+    def handle_friend_request(self):
+        payload = self.parse_body()
+        if payload is None:
+            return
+        target_id = int(payload.get("target_user_id", 0) or 0)
+        message = payload.get("message", "").strip()[:240]
+        conn = db_conn()
+        user = self.require_auth(conn)
+        if not user:
+            conn.close()
+            return
+        if target_id == user["id"] or target_id <= 0:
+            conn.close()
+            return self.send_json(HTTPStatus.BAD_REQUEST, {"error": "invalid_target"})
+        target = conn.execute("SELECT id FROM users WHERE id = ? AND role = 'user'", (target_id,)).fetchone()
+        if not target:
+            conn.close()
+            return self.send_json(HTTPStatus.NOT_FOUND, {"error": "user_not_found"})
+        existing = conn.execute(
+            """
+            SELECT * FROM friend_requests
+            WHERE (requester_id = ? AND addressee_id = ?) OR (requester_id = ? AND addressee_id = ?)
+            """,
+            (user["id"], target_id, target_id, user["id"]),
+        ).fetchone()
+        stamp = now_iso()
+        if existing:
+            if existing["status"] == "accepted":
+                conn.close()
+                return self.send_json(HTTPStatus.OK, {"ok": True, "status": "friend"})
+            if existing["requester_id"] == target_id and existing["status"] == "pending":
+                conn.execute("UPDATE friend_requests SET status = 'accepted', updated_at = ? WHERE id = ?", (stamp, existing["id"]))
+                conn.commit()
+                conn.close()
+                return self.send_json(HTTPStatus.OK, {"ok": True, "status": "friend"})
+            conn.execute(
+                "UPDATE friend_requests SET status = 'pending', message = ?, updated_at = ? WHERE id = ?",
+                (message, stamp, existing["id"]),
+            )
+        else:
+            conn.execute(
+                """
+                INSERT INTO friend_requests (requester_id, addressee_id, status, message, created_at, updated_at)
+                VALUES (?, ?, 'pending', ?, ?, ?)
+                """,
+                (user["id"], target_id, message, stamp, stamp),
+            )
+        conn.commit()
+        conn.close()
+        return self.send_json(HTTPStatus.CREATED, {"ok": True, "status": "requested"})
+
+    def handle_friend_respond(self):
+        payload = self.parse_body()
+        if payload is None:
+            return
+        request_id = int(payload.get("request_id", 0) or 0)
+        status = payload.get("status", "").strip()
+        if status not in {"accepted", "declined"}:
+            return self.send_json(HTTPStatus.BAD_REQUEST, {"error": "invalid_friend_status"})
+        conn = db_conn()
+        user = self.require_auth(conn)
+        if not user:
+            conn.close()
+            return
+        row = conn.execute(
+            "SELECT id FROM friend_requests WHERE id = ? AND addressee_id = ? AND status = 'pending'",
+            (request_id, user["id"]),
+        ).fetchone()
+        if not row:
+            conn.close()
+            return self.send_json(HTTPStatus.NOT_FOUND, {"error": "request_not_found"})
+        conn.execute("UPDATE friend_requests SET status = ?, updated_at = ? WHERE id = ?", (status, now_iso(), request_id))
+        conn.commit()
+        conn.close()
+        return self.send_json(HTTPStatus.OK, {"ok": True, "status": status})
+
+    def handle_social_messages(self, query_string):
+        conn = db_conn()
+        user = self.require_auth(conn)
+        if not user:
+            conn.close()
+            return
+        query = parse_qs(query_string)
+        other_id = int(query.get("user_id", ["0"])[0] or 0)
+        if not self.are_friends(conn, user["id"], other_id):
+            conn.close()
+            return self.send_json(HTTPStatus.FORBIDDEN, {"error": "not_friends"})
+        rows = conn.execute(
+            """
+            SELECT id, sender_id, receiver_id, body, created_at
+            FROM messages
+            WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)
+            ORDER BY created_at ASC, id ASC
+            LIMIT 120
+            """,
+            (user["id"], other_id, other_id, user["id"]),
+        ).fetchall()
+        conn.close()
+        return self.send_json(HTTPStatus.OK, {"messages": [dict(row) for row in rows]})
+
+    def handle_message_submit(self):
+        payload = self.parse_body()
+        if payload is None:
+            return
+        receiver_id = int(payload.get("receiver_id", 0) or 0)
+        body = payload.get("body", "").strip()
+        if not body:
+            return self.send_json(HTTPStatus.BAD_REQUEST, {"error": "empty_message"})
+        conn = db_conn()
+        user = self.require_auth(conn)
+        if not user:
+            conn.close()
+            return
+        if not self.are_friends(conn, user["id"], receiver_id):
+            conn.close()
+            return self.send_json(HTTPStatus.FORBIDDEN, {"error": "not_friends"})
+        stamp = now_iso()
+        cursor = conn.execute(
+            "INSERT INTO messages (sender_id, receiver_id, body, created_at) VALUES (?, ?, ?, ?)",
+            (user["id"], receiver_id, body[:1000], stamp),
+        )
+        conn.commit()
+        conn.close()
+        return self.send_json(
+            HTTPStatus.CREATED,
+            {"message": {"id": cursor.lastrowid, "sender_id": user["id"], "receiver_id": receiver_id, "body": body[:1000], "created_at": stamp}},
+        )
+
     def handle_support(self):
         return self.send_json(
             HTTPStatus.OK,
@@ -922,6 +1184,8 @@ class AppHandler(BaseHTTPRequestHandler):
             "activity_signups": conn.execute("SELECT COUNT(*) AS count FROM activity_signups").fetchone()["count"],
             "presales": conn.execute("SELECT COUNT(*) AS count FROM presale_orders").fetchone()["count"],
             "leads": conn.execute("SELECT COUNT(*) AS count FROM leads").fetchone()["count"],
+            "friend_requests": conn.execute("SELECT COUNT(*) AS count FROM friend_requests").fetchone()["count"],
+            "messages": conn.execute("SELECT COUNT(*) AS count FROM messages").fetchone()["count"],
         }
         conn.close()
         return self.send_json(HTTPStatus.OK, {"overview": overview})
@@ -1111,6 +1375,59 @@ class AppHandler(BaseHTTPRequestHandler):
             "review_status": profile["review_status"],
             "match_status": profile["match_status"],
         }
+
+    def serialize_social_user(self, row, relation_status="none"):
+        interests = json_loads(row["interests_json"], [])
+        result = json_loads(row["test_result_json"], {})
+        display_name = row["nickname"] or row["name"]
+        return {
+            "id": row["id"],
+            "request_id": row["request_id"] if "request_id" in row.keys() else None,
+            "name": display_name,
+            "city": row["city"],
+            "bio": row["bio"] or "这个用户还没有写自我介绍，可以先从兴趣标签开始破冰。",
+            "interests": interests,
+            "primary_tags": row["primary_tags"] or "未填写",
+            "favorite_scene": row["favorite_scene"] or "城市现场",
+            "test_title": result.get("title", "同频画像待生成"),
+            "review_status": row["review_status"],
+            "relation_status": relation_status,
+        }
+
+    def social_relation_map(self, conn, user_id):
+        rows = conn.execute(
+            """
+            SELECT requester_id, addressee_id, status
+            FROM friend_requests
+            WHERE requester_id = ? OR addressee_id = ?
+            """,
+            (user_id, user_id),
+        ).fetchall()
+        relations = {}
+        for row in rows:
+            other_id = row["addressee_id"] if row["requester_id"] == user_id else row["requester_id"]
+            if row["status"] == "accepted":
+                relations[other_id] = "friend"
+            elif row["status"] == "pending" and row["requester_id"] == user_id:
+                relations[other_id] = "requested"
+            elif row["status"] == "pending" and row["addressee_id"] == user_id:
+                relations[other_id] = "incoming"
+            elif other_id not in relations:
+                relations[other_id] = row["status"]
+        return relations
+
+    def are_friends(self, conn, user_id, other_id):
+        if not other_id or user_id == other_id:
+            return False
+        row = conn.execute(
+            """
+            SELECT id FROM friend_requests
+            WHERE status = 'accepted'
+              AND ((requester_id = ? AND addressee_id = ?) OR (requester_id = ? AND addressee_id = ?))
+            """,
+            (user_id, other_id, other_id, user_id),
+        ).fetchone()
+        return row is not None
 
 
 def run():

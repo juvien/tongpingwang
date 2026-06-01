@@ -117,6 +117,8 @@ async function loadOverview() {
     ["活动报名", overview.activity_signups || 0],
     ["预售记录", overview.presales || 0],
     ["线索报名", overview.leads || 0],
+    ["好友申请", overview.friend_requests || 0],
+    ["聊天消息", overview.messages || 0],
   ].forEach(([label, value]) => {
     const card = document.createElement("article");
     card.innerHTML = `<strong>${value}</strong><span>${label}</span>`;

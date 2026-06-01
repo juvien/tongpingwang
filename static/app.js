@@ -4,6 +4,9 @@ const state = {
   activities: [],
   selectedActivityId: null,
   selectedActivity: null,
+  socialUsers: [],
+  relations: { incoming: [], outgoing: [], friends: [] },
+  activeChatUser: null,
   staticMode: location.protocol === "file:" || location.hostname.endsWith("github.io"),
 };
 
@@ -73,6 +76,16 @@ const threadPreview = document.getElementById("thread-preview");
 const activityDrawer = document.getElementById("activity-drawer");
 const scrollProgress = document.getElementById("scroll-progress");
 const navLinks = Array.from(document.querySelectorAll(".site-nav a"));
+const socialHub = document.getElementById("social-hub");
+const socialSearchForm = document.getElementById("social-search-form");
+const socialRefresh = document.getElementById("social-refresh");
+const socialUserGrid = document.getElementById("social-user-grid");
+const incomingRequests = document.getElementById("incoming-requests");
+const outgoingRequests = document.getElementById("outgoing-requests");
+const friendList = document.getElementById("friend-list");
+const chatDrawer = document.getElementById("chat-drawer");
+const chatMessages = document.getElementById("chat-messages");
+const chatForm = document.getElementById("chat-form");
 
 const threadContent = {
   profile: {
@@ -115,8 +128,15 @@ document.querySelectorAll("[data-close-activity]").forEach((button) => {
   button.addEventListener("click", closeActivityDrawer);
 });
 
+document.querySelectorAll("[data-close-chat]").forEach((button) => {
+  button.addEventListener("click", closeChatDrawer);
+});
+
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") closeActivityDrawer();
+  if (event.key === "Escape") {
+    closeActivityDrawer();
+    closeChatDrawer();
+  }
 });
 
 window.addEventListener("scroll", updateScrollState, { passive: true });
@@ -129,6 +149,26 @@ document.querySelectorAll(".thread-toggle").forEach((button) => {
 
 authJump.addEventListener("click", () => {
   document.getElementById("auth-panel")?.scrollIntoView({ behavior: "smooth" });
+});
+
+socialSearchForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  await loadSocialUsers(new URLSearchParams(new FormData(socialSearchForm)).toString());
+});
+
+socialRefresh?.addEventListener("click", async () => {
+  await loadSocialHub();
+});
+
+chatForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const payload = Object.fromEntries(new FormData(chatForm).entries());
+  payload.receiver_id = Number(payload.receiver_id);
+  const result = await api("/api/social/messages", "POST", payload, "chat-message");
+  if (result?.message) {
+    chatForm.body.value = "";
+    await loadMessages(payload.receiver_id);
+  }
 });
 
 logoutButton.addEventListener("click", async () => {
@@ -163,9 +203,10 @@ registerForm.addEventListener("submit", async (event) => {
   if (result?.user) {
     state.user = result.user;
     await loadDashboard();
+    await loadSocialHub();
     syncAuthUI();
     updatePostLoginJourney(true);
-    postLoginJourney?.scrollIntoView({ behavior: "smooth", block: "start" });
+    socialHub?.scrollIntoView({ behavior: "smooth", block: "start" });
     toast("注册成功，欢迎加入同频局");
   }
 });
@@ -178,10 +219,11 @@ loginForm.addEventListener("submit", async (event) => {
   if (result?.user) {
     state.user = result.user;
     await loadDashboard();
+    await loadSocialHub();
     syncAuthUI();
     updatePostLoginJourney(false);
-    postLoginJourney?.scrollIntoView({ behavior: "smooth", block: "start" });
-    toast("登录成功，已为你打开下一步页面");
+    socialHub?.scrollIntoView({ behavior: "smooth", block: "start" });
+    toast("登录成功，已为你打开同频大厅");
   }
 });
 
@@ -272,6 +314,7 @@ async function bootstrap() {
   if (me.user) {
     state.user = me.user;
     await loadDashboard();
+    await loadSocialHub();
   }
   syncAuthUI();
   setupReveals();
@@ -356,11 +399,175 @@ async function loadSupport() {
   document.getElementById("support-copy").textContent = support.message;
 }
 
+async function loadSocialHub() {
+  if (!state.user) return;
+  await Promise.all([loadSocialUsers(), loadSocialRelations()]);
+}
+
+async function loadSocialUsers(queryString = "") {
+  if (!state.user || !socialUserGrid) return;
+  const suffix = queryString ? `?${queryString}` : "";
+  socialUserGrid.innerHTML = `<div class="social-empty">正在整理同频用户…</div>`;
+  const result = await getJson(`/api/social/users${suffix}`, () => getStaticSocialUsers(queryString));
+  state.socialUsers = result.users || [];
+  renderSocialUsers();
+}
+
+async function loadSocialRelations() {
+  if (!state.user) return;
+  const result = await getJson("/api/social/relations", getStaticRelations);
+  state.relations = result || { incoming: [], outgoing: [], friends: [] };
+  renderRelations();
+}
+
+function renderSocialUsers() {
+  if (!socialUserGrid) return;
+  if (!state.socialUsers.length) {
+    socialUserGrid.innerHTML = `<div class="social-empty">暂时没有匹配用户。可以换个城市或兴趣关键词试试。</div>`;
+    return;
+  }
+  socialUserGrid.innerHTML = "";
+  state.socialUsers.forEach((user) => {
+    const card = document.createElement("article");
+    card.className = "social-card";
+    const action = socialActionLabel(user.relation_status);
+    card.innerHTML = `
+      <div class="social-card__top">
+        <span class="avatar-mark">${escapeHtml(user.name).slice(0, 1)}</span>
+        <div>
+          <h4>${escapeHtml(user.name)}</h4>
+          <p>${escapeHtml(user.city)} · ${escapeHtml(user.favorite_scene || "城市现场")}</p>
+        </div>
+      </div>
+      <p>${escapeHtml(user.bio)}</p>
+      <div class="social-tags">${(user.interests || []).slice(0, 4).map((item) => `<span>${escapeHtml(item)}</span>`).join("") || `<span>${escapeHtml(user.primary_tags || "待完善")}</span>`}</div>
+      <div class="social-card__result">
+        <strong>${escapeHtml(user.test_title || "同频画像待生成")}</strong>
+        <span>${socialRelationText(user.relation_status)}</span>
+      </div>
+      <button class="ghost-button social-action" type="button" ${action.disabled ? "disabled" : ""}>${action.label}</button>
+    `;
+    card.querySelector(".social-action").addEventListener("click", async () => {
+      if (user.relation_status === "friend") {
+        openChatDrawer(user);
+        return;
+      }
+      if (user.relation_status === "none" || user.relation_status === "declined") {
+        await requestFriend(user);
+      }
+    });
+    socialUserGrid.appendChild(card);
+  });
+}
+
+function renderRelations() {
+  renderRelationList(incomingRequests, state.relations.incoming || [], "incoming");
+  renderRelationList(outgoingRequests, state.relations.outgoing || [], "outgoing");
+  renderRelationList(friendList, state.relations.friends || [], "friend");
+}
+
+function renderRelationList(container, users, type) {
+  if (!container) return;
+  if (!users.length) {
+    container.innerHTML = `<p class="helper-copy">${type === "friend" ? "通过好友申请后，可以在这里开始聊天。" : "暂时没有新的申请。"}</p>`;
+    return;
+  }
+  container.innerHTML = "";
+  users.forEach((user) => {
+    const item = document.createElement("article");
+    item.className = "relation-item";
+    item.innerHTML = `
+      <span class="avatar-mark">${escapeHtml(user.name).slice(0, 1)}</span>
+      <div>
+        <strong>${escapeHtml(user.name)}</strong>
+        <p>${escapeHtml(user.city)} · ${escapeHtml(user.primary_tags || "兴趣待完善")}</p>
+      </div>
+      <div class="relation-actions"></div>
+    `;
+    const actions = item.querySelector(".relation-actions");
+    if (type === "incoming") {
+      actions.innerHTML = `
+        <button class="table-action" data-action="accept">通过</button>
+        <button class="table-action" data-action="decline">拒绝</button>
+      `;
+      actions.querySelector('[data-action="accept"]').addEventListener("click", () => respondFriend(user.request_id, "accepted"));
+      actions.querySelector('[data-action="decline"]').addEventListener("click", () => respondFriend(user.request_id, "declined"));
+    } else if (type === "friend") {
+      actions.innerHTML = `<button class="table-action" data-action="chat">聊天</button>`;
+      actions.querySelector('[data-action="chat"]').addEventListener("click", () => openChatDrawer(user));
+    } else {
+      actions.innerHTML = `<span class="status-pill">等待回应</span>`;
+    }
+    container.appendChild(item);
+  });
+}
+
+async function requestFriend(user) {
+  const result = await api("/api/social/friends/request", "POST", {
+    target_user_id: user.id,
+    message: "你好，我在同频大厅看到你的兴趣，想先从轻松聊天开始认识一下。",
+  });
+  if (result?.ok) {
+    toast(result.status === "friend" ? "你们已经成为好友，可以开始聊天" : "好友申请已发送");
+    await loadSocialHub();
+  }
+}
+
+async function respondFriend(requestId, status) {
+  const result = await api("/api/social/friends/respond", "POST", { request_id: requestId, status });
+  if (result?.ok) {
+    toast(status === "accepted" ? "已通过申请，可以开始聊天" : "已拒绝申请");
+    await loadSocialHub();
+  }
+}
+
+async function openChatDrawer(user) {
+  if (!chatDrawer) return;
+  state.activeChatUser = user;
+  document.getElementById("chat-title").textContent = `和 ${user.name} 聊天`;
+  document.getElementById("chat-subtitle").textContent = `${user.city} · ${user.primary_tags || "共同兴趣"}。建议从共同场景开始，保持轻松和边界感。`;
+  chatForm.receiver_id.value = user.id;
+  setMessage("chat-message", "");
+  chatDrawer.classList.remove("hidden");
+  chatDrawer.setAttribute("aria-hidden", "false");
+  document.body.classList.add("has-drawer");
+  await loadMessages(user.id);
+  chatForm.body.focus();
+}
+
+function closeChatDrawer() {
+  if (!chatDrawer || chatDrawer.classList.contains("hidden")) return;
+  chatDrawer.classList.add("hidden");
+  chatDrawer.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("has-drawer");
+}
+
+async function loadMessages(userId) {
+  const result = await getJson(`/api/social/messages?user_id=${userId}`, () => getStaticMessages(userId));
+  renderMessages(result.messages || []);
+}
+
+function renderMessages(messages) {
+  if (!chatMessages) return;
+  if (!messages.length) {
+    chatMessages.innerHTML = `<div class="social-empty">还没有消息。可以从共同兴趣或活动开始第一句话。</div>`;
+    return;
+  }
+  chatMessages.innerHTML = messages
+    .map((message) => {
+      const mine = message.sender_id === state.user?.id;
+      return `<div class="chat-bubble ${mine ? "is-mine" : ""}"><p>${escapeHtml(message.body)}</p><span>${formatTime(message.created_at)}</span></div>`;
+    })
+    .join("");
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
 function syncAuthUI() {
   const loggedIn = Boolean(state.user);
   document.body.classList.toggle("is-logged-in", loggedIn);
   dashboardPanel.classList.toggle("hidden", !loggedIn);
   postLoginJourney.classList.toggle("hidden", !loggedIn);
+  socialHub?.classList.toggle("hidden", !loggedIn);
   logoutButton.classList.toggle("hidden", !loggedIn);
   adminLink.classList.toggle("hidden", !(loggedIn && state.user.role === "admin"));
   authJump.textContent = loggedIn ? "已登录" : "注册 / 登录";
@@ -641,13 +848,25 @@ async function getJson(url, fallbackFactory) {
 function loadStaticStore() {
   const raw = localStorage.getItem(staticStoreKey);
   if (!raw) {
-    return { users: [], leads: [], activitySignups: [], presales: [], currentUserEmail: null };
+    return { users: [], leads: [], activitySignups: [], presales: [], friendRequests: [], messages: [], currentUserEmail: null };
   }
   try {
-    return JSON.parse(raw);
+    return normalizeStaticStore(JSON.parse(raw));
   } catch (error) {
-    return { users: [], leads: [], activitySignups: [], presales: [], currentUserEmail: null };
+    return { users: [], leads: [], activitySignups: [], presales: [], friendRequests: [], messages: [], currentUserEmail: null };
   }
+}
+
+function normalizeStaticStore(data) {
+  return {
+    users: data.users || [],
+    leads: data.leads || [],
+    activitySignups: data.activitySignups || [],
+    presales: data.presales || [],
+    friendRequests: data.friendRequests || [],
+    messages: data.messages || [],
+    currentUserEmail: data.currentUserEmail || null,
+  };
 }
 
 function saveStaticStore(data) {
@@ -669,6 +888,66 @@ function getStaticDashboard() {
     profile: user.profile || {},
     activity_signups: data.activitySignups.filter((item) => item.user_email === user.email),
     presales: data.presales.filter((item) => item.user_email === user.email),
+  };
+}
+
+function getStaticSocialUsers(queryString = "") {
+  const data = loadStaticStore();
+  const current = data.users.find((item) => item.email === data.currentUserEmail);
+  if (!current) return { users: [] };
+  const query = new URLSearchParams(queryString);
+  const search = (query.get("search") || "").trim();
+  const city = (query.get("city") || "").trim();
+  const tag = (query.get("tag") || "").trim();
+  const relations = staticRelationMap(data, current.email);
+  const users = data.users
+    .filter((item) => item.email !== current.email && item.role !== "admin")
+    .filter((item) => {
+      const profile = item.profile || {};
+      const haystack = [item.name, item.city, profile.bio, profile.primary_tags, ...(profile.interests || [])].join(" ");
+      if (search && !haystack.includes(search)) return false;
+      if (city && !item.city.includes(city)) return false;
+      if (tag && !(profile.primary_tags || "").includes(tag)) return false;
+      return true;
+    })
+    .map((item) => staticSocialUser(item, relations[item.email] || "none"));
+  return { users };
+}
+
+function getStaticRelations() {
+  const data = loadStaticStore();
+  const current = data.users.find((item) => item.email === data.currentUserEmail);
+  if (!current) return { incoming: [], outgoing: [], friends: [] };
+  const userByEmail = Object.fromEntries(data.users.map((item) => [item.email, item]));
+  const incoming = [];
+  const outgoing = [];
+  const friends = [];
+  data.friendRequests.forEach((request) => {
+    if (request.status === "pending" && request.addressee_email === current.email && userByEmail[request.requester_email]) {
+      incoming.push({ ...staticSocialUser(userByEmail[request.requester_email], "incoming"), request_id: request.id });
+    }
+    if (request.status === "pending" && request.requester_email === current.email && userByEmail[request.addressee_email]) {
+      outgoing.push({ ...staticSocialUser(userByEmail[request.addressee_email], "requested"), request_id: request.id });
+    }
+    if (request.status === "accepted" && (request.requester_email === current.email || request.addressee_email === current.email)) {
+      const otherEmail = request.requester_email === current.email ? request.addressee_email : request.requester_email;
+      if (userByEmail[otherEmail]) friends.push({ ...staticSocialUser(userByEmail[otherEmail], "friend"), request_id: request.id });
+    }
+  });
+  return { incoming, outgoing, friends };
+}
+
+function getStaticMessages(userId) {
+  const data = loadStaticStore();
+  const current = data.users.find((item) => item.email === data.currentUserEmail);
+  const other = data.users.find((item) => item.id === Number(userId));
+  if (!current || !other) return { messages: [] };
+  return {
+    messages: data.messages.filter(
+      (item) =>
+        (item.sender_email === current.email && item.receiver_email === other.email) ||
+        (item.sender_email === other.email && item.receiver_email === current.email)
+    ),
   };
 }
 
@@ -738,6 +1017,65 @@ function localApi(url, payload) {
     saveStaticStore(data);
     return { ok: true };
   }
+  if (url === "/api/social/friends/request") {
+    const target = data.users.find((item) => item.id === Number(payload.target_user_id));
+    if (!target || target.email === user.email) return { error: "invalid_target" };
+    const existing = data.friendRequests.find(
+      (item) =>
+        (item.requester_email === user.email && item.addressee_email === target.email) ||
+        (item.requester_email === target.email && item.addressee_email === user.email)
+    );
+    if (existing) {
+      if (existing.status === "accepted") return { ok: true, status: "friend" };
+      if (existing.requester_email === target.email && existing.status === "pending") {
+        existing.status = "accepted";
+        existing.updated_at = new Date().toISOString();
+        saveStaticStore(data);
+        return { ok: true, status: "friend" };
+      }
+      existing.status = "pending";
+      existing.message = payload.message || "";
+      existing.updated_at = new Date().toISOString();
+    } else {
+      data.friendRequests.push({
+        id: Date.now(),
+        requester_email: user.email,
+        addressee_email: target.email,
+        status: "pending",
+        message: payload.message || "",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+    }
+    saveStaticStore(data);
+    return { ok: true, status: "requested" };
+  }
+  if (url === "/api/social/friends/respond") {
+    const request = data.friendRequests.find((item) => item.id === Number(payload.request_id) && item.addressee_email === user.email);
+    if (!request) return { error: "request_not_found" };
+    request.status = payload.status;
+    request.updated_at = new Date().toISOString();
+    saveStaticStore(data);
+    return { ok: true, status: payload.status };
+  }
+  if (url === "/api/social/messages") {
+    const receiver = data.users.find((item) => item.id === Number(payload.receiver_id));
+    if (!receiver) return { error: "user_not_found" };
+    const friends = staticRelationMap(data, user.email);
+    if (friends[receiver.email] !== "friend") return { error: "not_friends" };
+    const message = {
+      id: Date.now(),
+      sender_id: user.id,
+      receiver_id: receiver.id,
+      sender_email: user.email,
+      receiver_email: receiver.email,
+      body: payload.body || "",
+      created_at: new Date().toISOString(),
+    };
+    data.messages.push(message);
+    saveStaticStore(data);
+    return { message };
+  }
   if (url.includes("/api/activities/") && url.endsWith("/signup")) {
     const activityId = Number(url.split("/")[3]);
     const exists = data.activitySignups.some((item) => item.user_email === user.email && item.activity_id === activityId);
@@ -752,6 +1090,36 @@ function localApi(url, payload) {
 
 function publicUser(user) {
   return { id: user.id, name: user.name, email: user.email, city: user.city, role: user.role };
+}
+
+function staticSocialUser(user, relationStatus) {
+  const profile = user.profile || {};
+  return {
+    id: user.id,
+    request_id: null,
+    name: profile.nickname || user.name,
+    city: profile.city || user.city,
+    bio: profile.bio || "这个用户还没有写自我介绍，可以先从兴趣标签开始破冰。",
+    interests: profile.interests || [],
+    primary_tags: profile.primary_tags || (profile.interests || []).slice(0, 3).join(","),
+    favorite_scene: profile.favorite_scene || "城市现场",
+    test_title: profile.test_result?.title || "同频画像待生成",
+    review_status: profile.review_status || "pending",
+    relation_status: relationStatus,
+  };
+}
+
+function staticRelationMap(data, currentEmail) {
+  const relations = {};
+  data.friendRequests.forEach((request) => {
+    if (request.requester_email !== currentEmail && request.addressee_email !== currentEmail) return;
+    const otherEmail = request.requester_email === currentEmail ? request.addressee_email : request.requester_email;
+    if (request.status === "accepted") relations[otherEmail] = "friend";
+    else if (request.status === "pending" && request.requester_email === currentEmail) relations[otherEmail] = "requested";
+    else if (request.status === "pending" && request.addressee_email === currentEmail) relations[otherEmail] = "incoming";
+    else if (!relations[otherEmail]) relations[otherEmail] = request.status;
+  });
+  return relations;
 }
 
 function summarizeLocalResult(answers, interests) {
@@ -809,7 +1177,45 @@ function humanError(code) {
     auth_required: "需要先登录。",
     already_signed: "你已经报名过这个活动了。",
     invalid_presale: "请选择有效的早鸟权益。",
+    invalid_target: "不能向这个用户发送申请。",
+    user_not_found: "没有找到这个用户。",
+    invalid_friend_status: "好友申请状态不正确。",
+    request_not_found: "没有找到这条好友申请。",
+    not_friends: "通过好友申请后才能聊天。",
+    empty_message: "消息内容不能为空。",
   }[code] || "请求没有成功，请再试一次。";
+}
+
+function socialActionLabel(status) {
+  if (status === "friend") return { label: "打开聊天", disabled: false };
+  if (status === "requested") return { label: "已发送申请", disabled: true };
+  if (status === "incoming") return { label: "去右侧回应", disabled: true };
+  return { label: "申请认识", disabled: false };
+}
+
+function socialRelationText(status) {
+  return {
+    friend: "已成为好友",
+    requested: "等待对方回应",
+    incoming: "对方想认识你",
+    declined: "可以重新申请",
+  }[status] || "还没有建立连接";
+}
+
+function formatTime(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 function setMessage(id, text, success = false) {
