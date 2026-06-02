@@ -20,10 +20,11 @@
         </a>
         <nav class="site-nav">
           <a href="#activities">城市现场</a>
+          <a href="#live-moments">真实瞬间</a>
+          <a href="#co-creator">主理人计划</a>
           <a href="#story">同频流程</a>
-          <a href="#quiz">同频测试</a>
-          <a href="#presale">早鸟资格</a>
-          <a href="#support">加入社群</a>
+          <a href="#quiz">3 分钟测试</a>
+          <a href="#final-cta">加入内测</a>
         </nav>
         <div class="header-actions">
           <a class="ghost-button hidden" id="admin-link" href="/admin">后台</a>
@@ -48,9 +49,13 @@
                 先看见彼此的兴趣和节奏，再走进同一个现场。
               </p>
               <div class="hero-actions">
-                <button class="primary-button" data-scroll="#auth-panel">开始同频测试 <span aria-hidden="true">→</span></button>
-                <button class="ghost-button ghost-button--light" data-scroll="#activities">浏览城市活动</button>
+                <button class="primary-button primary-button--live" data-scroll="#quiz">
+                  <span class="live-dot" aria-hidden="true"></span>
+                  寻找我的同频搭子（限额开放）<span aria-hidden="true">→</span>
+                </button>
+                <button class="ghost-button ghost-button--light" data-scroll="#activities">看看正在组什么局 →</button>
               </div>
+              <p class="hero-online"><span class="live-dot" aria-hidden="true"></span>当前 37 人在线组局中，首批内测名额正在开放</p>
               <div class="hero-proof">
                 <span>真人资料审核</span>
                 <span>女性友好边界</span>
@@ -88,6 +93,36 @@
           <div class="activity-grid" id="activity-grid"></div>
         </section>
 
+        <section class="live-moments" id="live-moments">
+          <div class="section-heading">
+            <span class="eyebrow">正在发生的现场</span>
+            <h2>这里不是空城，是有人已经在认真、松弛地靠近。</h2>
+            <p>用真实日常的粗糙感建立信任：不是完美人设，而是能一起走进现场的人。</p>
+          </div>
+          <div class="moment-rail" aria-label="同频社群日常">
+            <article class="moment-card moment-card--tilt-left">
+              <img src="assets/activity-film-walk.jpg" alt="夕阳下拿相机的城市胶片散步现场" />
+              <p>今天胶片局太绝了，最后一卷刚好拍到日落。</p>
+              <span>上海 · 摄影散步</span>
+            </article>
+            <article class="moment-card moment-card--tilt-right">
+              <img src="assets/activity-livehouse.jpg" alt="livehouse 演出前的同频预热小队" />
+              <p>预热局认识了 3 个同样爱落日飞车的朋友。</p>
+              <span>成都 · livehouse</span>
+            </article>
+            <article class="moment-card moment-card--tilt-left">
+              <img src="assets/activity-night-market.jpg" alt="夜光市集里自然聊天的同频现场" />
+              <p>市集搭子带我吃了从没见过的烤苕皮。</p>
+              <span>杭州 · 夜光市集</span>
+            </article>
+            <article class="moment-card moment-card--tilt-right">
+              <img src="assets/hero-v2.png" alt="夜晚城市兴趣社群相遇的氛围" />
+              <p>第一次有人认真问我喜欢什么样的边界感。</p>
+              <span>同频社群 · 慢聊天</span>
+            </article>
+          </div>
+        </section>
+
         <section class="story-grid" id="story">
           <article class="story-card">
             <span>同频先于匹配</span>
@@ -104,6 +139,38 @@
             <h2>把“想认识你”落到一场具体活动里。</h2>
             <p>摄影散步、展览书店、演出预热和主题市集，都能让第一次开口变得不那么突兀。</p>
           </article>
+        </section>
+
+        <section class="co-creator" id="co-creator">
+          <div class="co-creator__copy">
+            <span class="eyebrow eyebrow--dark">首批 100 位</span>
+            <h2>同频主理人招募</h2>
+            <p>
+              如果你热爱 livehouse、对市集上瘾、喜欢用胶片记录城市，我们邀请你成为首批“局长”。
+              你不只是用户，而是和我们一起把这个城市里的同频现场做出来的人。
+            </p>
+            <div class="co-creator__actions">
+              <button class="primary-button" id="co-creator-cta" type="button">申请成为主理人</button>
+              <button class="ghost-button ghost-button--light" data-scroll="#live-moments" type="button">先看看现场</button>
+            </div>
+          </div>
+          <div class="co-creator__perks" aria-label="主理人权益">
+            <article>
+              <strong>🏅</strong>
+              <h3>永久免费活动权</h3>
+              <p>首批主理人参加官方小局不收活动服务费。</p>
+            </article>
+            <article>
+              <strong>✨</strong>
+              <h3>官方认证主理人标识</h3>
+              <p>你的资料页会拥有专属主理人身份感。</p>
+            </article>
+            <article>
+              <strong>🗳️</strong>
+              <h3>共同决定产品方向</h3>
+              <p>你可以直接参与城市活动、测试题和社群规则共创。</p>
+            </article>
+          </div>
         </section>
 
         <section class="promise-panel">
@@ -153,6 +220,32 @@
           </div>
         </section>
 
+        <section class="safety-promise" id="safety-promise">
+          <div class="safety-promise__copy">
+            <span class="eyebrow">安心承诺</span>
+            <h2>你的安心，是我们最重要的设计。</h2>
+            <p>同频局默认把安全、边界和可退出感放在前面，尤其照顾女性用户在陌生社交里的真实顾虑。</p>
+          </div>
+          <div class="safety-grid">
+            <article>
+              <span>🛡️</span>
+              <h3>人工审核身份</h3>
+              <p>每位用户资料经真人核验，拒绝照骗和明显虚假资料。</p>
+            </article>
+            <article>
+              <span>🚫</span>
+              <h3>拒绝低质量骚扰</h3>
+              <p>智能和人工双重过滤，不舒服就可以退出并交给运营处理。</p>
+            </article>
+            <article>
+              <span>🔒</span>
+              <h3>社交边界自主权</h3>
+              <p>你决定谁能联系你、以什么方式、在什么场景里靠近。</p>
+            </article>
+          </div>
+        </section>
+
+
         <section class="split-panel" id="lead-panel">
           <div class="section-heading">
             <span class="eyebrow">首批体验报名</span>
@@ -160,6 +253,7 @@
             <p>告诉我们你在哪座城市、想去什么现场、想认识什么样的人，我们会优先邀请你加入同频测试、城市社群或小型活动。</p>
           </div>
           <form class="glass-form" id="lead-form">
+            <input type="hidden" name="source" value="homepage" />
             <label>
               你的称呼
               <input name="name" placeholder="比如：阿久 / Momo / 胶片猫" required />
@@ -425,56 +519,55 @@
 
         <section class="form-section" id="quiz">
           <div class="section-heading">
-            <span class="eyebrow">轻人格 / 兴趣测试</span>
-            <h2>用 5 个问题，判断你更适合哪一种关系开场。</h2>
-            <p>测试结果会转化成活动推荐、社群分组和人工撮合提示，让“同频”不是一句空话。</p>
+            <span class="eyebrow">3 分钟微缩体验</span>
+            <h2>先用 3 个问题，找到你今晚最适合走进的同频现场。</h2>
+            <p>不做复杂心理测试，只快速判断你更适合哪种场景、哪种关系开场，以及该从哪里认识人。</p>
           </div>
-          <form class="glass-form form-grid" id="quiz-form">
-            <label>
-              你更舒服的认识节奏
-              <select name="pace">
-                <option value="slow">先聊聊，再决定见面</option>
-                <option value="steady">聊几句就可以约个轻活动</option>
-                <option value="fast">感觉对了就想马上约</option>
-              </select>
-            </label>
-            <label>
-              最容易心动的场景
-              <select name="scene">
-                <option value="cafe">咖啡馆的对视和闲聊</option>
-                <option value="market">市集里一起逛摊</option>
-                <option value="livehouse">演出前后聊歌单</option>
-                <option value="exhibition">展览和书店安静并肩</option>
-                <option value="bookstore">一起挑书或拍照</option>
-              </select>
-            </label>
-            <label>
-              你的表达方式更像
-              <select name="expression">
-                <option value="gentle">慢慢说，先听对方</option>
-                <option value="playful">爱玩梗，气氛到了就开聊</option>
-                <option value="direct">喜欢明确表达兴趣和边界</option>
-              </select>
-            </label>
-            <label>
-              你对关系推进的态度
-              <select name="planning">
-                <option value="balanced">先自然相处，再看走向</option>
-                <option value="careful">比较认真，会看长期感</option>
-                <option value="intentional">一开始就希望目标明确</option>
-              </select>
-            </label>
-            <label>
-              你希望对方给你的感觉
-              <select name="energy">
-                <option value="warm">稳定温暖</option>
-                <option value="spark">很有火花</option>
-                <option value="high">有趣、有梗、很会带气氛</option>
-              </select>
-            </label>
-            <button class="primary-button full-span" type="submit">生成同频结果</button>
-            <p class="helper-copy full-span">完成后你会得到一份可用于运营撮合的同频画像，包括适合你的开场场景、聊天节奏和见面建议。</p>
-            <p class="form-message full-span" id="quiz-message"></p>
+          <form class="micro-quiz" id="quiz-form">
+            <input type="hidden" name="pace" value="steady" />
+            <div class="quiz-step">
+              <span class="quiz-step__count">01</span>
+              <h3>选你最想走进去的场景</h3>
+              <div class="scene-choice-grid">
+                <label class="scene-choice">
+                  <input type="radio" name="scene" value="livehouse" checked />
+                  <img src="assets/activity-livehouse.jpg" alt="livehouse 演出前破冰现场" />
+                  <strong>Livehouse 预热局</strong>
+                  <span>靠歌单和现场感破冰</span>
+                </label>
+                <label class="scene-choice">
+                  <input type="radio" name="scene" value="comic" />
+                  <img src="assets/hero-v2.png" alt="漫展和城市社群里的同频相遇" />
+                  <strong>漫展同伴局</strong>
+                  <span>有人愿意认真帮你拍照</span>
+                </label>
+                <label class="scene-choice">
+                  <input type="radio" name="scene" value="bookstore" />
+                  <img src="assets/activity-film-walk.jpg" alt="胶片夜游和城市散步场景" />
+                  <strong>胶片夜游局</strong>
+                  <span>边走边聊，不用硬撑社交</span>
+                </label>
+              </div>
+            </div>
+            <div class="quiz-step">
+              <span class="quiz-step__count">02</span>
+              <h3>你来这里最想做什么？</h3>
+              <div class="pill-radio-group">
+                <label><input type="radio" name="expression" value="playful" checked /> 想找搭子</label>
+                <label><input type="radio" name="expression" value="direct" /> 纯扩列</label>
+                <label><input type="radio" name="expression" value="gentle" /> 深度聊天</label>
+              </div>
+            </div>
+            <div class="quiz-step quiz-step--contact">
+              <span class="quiz-step__count">03</span>
+              <label>
+                留一个接收匹配结果的入口
+                <input name="contact" placeholder="微信号 / 手机号 / 小红书号" required />
+              </label>
+              <button class="primary-button" type="submit">生成我的同频基因</button>
+              <p class="helper-copy">未登录也能生成结果；登录用户的画像会同步写入后台，方便后续搜索、加好友和聊天。</p>
+              <p class="form-message" id="quiz-message"></p>
+            </div>
           </form>
         </section>
 
@@ -584,22 +677,24 @@
           </form>
         </section>
 
-        <section class="support-section" id="support">
-          <div class="section-heading">
-            <span class="eyebrow">客服 / 社群承接入口</span>
-            <h2>把关系从页面接到社群里，让每一步都有人能回应。</h2>
-          </div>
-          <div class="support-card">
-            <img src="assets/support-card.svg" alt="客服社群入口示意图" />
-            <div>
-              <h3>添加客服进入城市社群</h3>
-              <p id="support-copy">客服会根据你的城市、兴趣标签和活动报名情况，把你拉进对应的兴趣群或安排人工撮合。</p>
-              <ul class="support-list">
-                <li>客服微信：<strong id="support-wechat">TongPinClub</strong></li>
-                <li>在线时间：<strong id="support-hours">每日 12:00 - 22:00</strong></li>
-                <li>添加时备注：<strong>同频局 + 城市 + 兴趣</strong></li>
-              </ul>
-            </div>
+        <section class="final-cta" id="final-cta">
+          <div class="final-cta__inner">
+            <span class="eyebrow eyebrow--dark">最后一个入口</span>
+            <h2>还没准备好？也可以先留一个入口。</h2>
+            <p id="support-copy">客服会根据你的城市、兴趣标签和活动报名情况，把你拉进对应的兴趣群或安排人工撮合。</p>
+            <form class="final-lead-form" id="final-lead-form">
+              <input type="hidden" name="name" value="底部入口用户" />
+              <input type="hidden" name="city" value="待确认" />
+              <input type="hidden" name="source" value="final-cta" />
+              <input name="contact" placeholder="输入你的微信号，先保留一个内测入口" required />
+              <button class="primary-button" type="submit">加入</button>
+            </form>
+            <p class="form-message" id="final-lead-message"></p>
+            <small>
+              客服微信：<strong id="support-wechat">TongPinClub</strong>
+              · 在线时间：<strong id="support-hours">每日 12:00 - 22:00</strong>
+              · © 2026 同频局
+            </small>
           </div>
         </section>
       </main>
@@ -640,8 +735,33 @@
       </div>
 
       <div class="sticky-conversion" id="sticky-conversion" aria-label="快捷操作">
-        <span>想先看看自己适合哪种现场？</span>
-        <button class="primary-button" data-scroll="#auth-panel">开始 3 分钟测试</button>
+        <span><span class="live-dot" aria-hidden="true"></span>37 人正在组局中</span>
+        <button class="primary-button" data-scroll="#quiz">加入首批同频内测 →</button>
+      </div>
+
+      <div class="quiz-modal hidden" id="quiz-modal" aria-hidden="true">
+        <button class="quiz-modal__backdrop" type="button" data-close-quiz-modal aria-label="关闭同频结果"></button>
+        <aside class="quiz-modal__panel" role="dialog" aria-modal="true" aria-labelledby="quiz-modal-title">
+          <button class="drawer-close" type="button" data-close-quiz-modal aria-label="关闭同频结果">×</button>
+          <span class="eyebrow">你的同频基因已生成</span>
+          <h3 id="quiz-modal-title">正在为你匹配同城现场</h3>
+          <p id="quiz-modal-summary">我们会根据你的场景偏好，把你放进更适合的城市小局。</p>
+          <div class="quiz-modal__result">
+            <strong id="quiz-modal-archetype">Vinyl</strong>
+            <span id="quiz-modal-match">适合配对愿意一起逛展、看演出、参加主题局的人。</span>
+          </div>
+          <div class="quiz-modal__support">
+            <img src="assets/support-card.svg" alt="添加主理人微信获取匹配结果" />
+            <div>
+              <h4>添加主理人微信，领取完整匹配结果</h4>
+              <p>备注“同频局 + 城市 + 兴趣”，我们会优先邀请你进入对应城市的内测小局。</p>
+            </div>
+          </div>
+          <div class="quiz-modal__actions">
+            <button class="primary-button" type="button" data-scroll="#auth-panel" data-close-quiz-modal>注册后进入同频大厅</button>
+            <button class="ghost-button" type="button" data-scroll="#activities" data-close-quiz-modal>先看城市活动</button>
+          </div>
+        </aside>
       </div>
 
       <div class="chat-drawer hidden" id="chat-drawer" aria-hidden="true">

@@ -65,6 +65,7 @@ const profileForm = document.getElementById("profile-form");
 const quizForm = document.getElementById("quiz-form");
 const intentForm = document.getElementById("intent-form");
 const leadForm = document.getElementById("lead-form");
+const finalLeadForm = document.getElementById("final-lead-form");
 const presaleForm = document.getElementById("presale-form");
 const activityNoteForm = document.getElementById("activity-note-form");
 const dashboardPanel = document.getElementById("dashboard-panel");
@@ -86,6 +87,8 @@ const friendList = document.getElementById("friend-list");
 const chatDrawer = document.getElementById("chat-drawer");
 const chatMessages = document.getElementById("chat-messages");
 const chatForm = document.getElementById("chat-form");
+const quizModal = document.getElementById("quiz-modal");
+const coCreatorCta = document.getElementById("co-creator-cta");
 
 const threadContent = {
   profile: {
@@ -132,10 +135,15 @@ document.querySelectorAll("[data-close-chat]").forEach((button) => {
   button.addEventListener("click", closeChatDrawer);
 });
 
+document.querySelectorAll("[data-close-quiz-modal]").forEach((button) => {
+  button.addEventListener("click", closeQuizModal);
+});
+
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     closeActivityDrawer();
     closeChatDrawer();
+    closeQuizModal();
   }
 });
 
@@ -149,6 +157,13 @@ document.querySelectorAll(".thread-toggle").forEach((button) => {
 
 authJump.addEventListener("click", () => {
   document.getElementById("auth-panel")?.scrollIntoView({ behavior: "smooth" });
+});
+
+coCreatorCta?.addEventListener("click", () => {
+  if (leadForm?.source) leadForm.source.value = "co-creator";
+  leadForm?.scrollIntoView({ behavior: "smooth", block: "center" });
+  setMessage("lead-message", "你正在申请首批同频主理人，请留下城市和联系方式。", true);
+  setTimeout(() => leadForm?.name?.focus(), 520);
 });
 
 socialSearchForm?.addEventListener("submit", async (event) => {
@@ -230,10 +245,24 @@ loginForm.addEventListener("submit", async (event) => {
 leadForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const payload = Object.fromEntries(new FormData(leadForm).entries());
+  payload.interest_note = withLeadSource(payload.interest_note, payload.source);
   const result = await api("/api/leads", "POST", payload, "lead-message");
   if (result?.ok) {
     leadForm.reset();
+    if (leadForm.source) leadForm.source.value = "homepage";
     setMessage("lead-message", "报名已收到，我们会优先联系你。", true);
+  }
+});
+
+finalLeadForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const payload = Object.fromEntries(new FormData(finalLeadForm).entries());
+  payload.interest_note = withLeadSource("底部单一入口留资，希望先保留内测资格。", payload.source);
+  const result = await api("/api/leads", "POST", payload, "final-lead-message");
+  if (result?.ok) {
+    finalLeadForm.reset();
+    setMessage("final-lead-message", "入口已保留，我们会优先联系你进入内测社群。", true);
+    toast("已收到你的内测入口");
   }
 });
 
@@ -252,15 +281,45 @@ profileForm.addEventListener("submit", async (event) => {
 
 quizForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  if (!ensureLogin("先注册或登录，再生成测试结果。")) return;
-  const answers = Object.fromEntries(new FormData(quizForm).entries());
-  const result = await api("/api/test", "POST", { answers }, "quiz-message");
+  const formData = new FormData(quizForm);
+  const contact = String(formData.get("contact") || "").trim();
+  const answers = {
+    scene: formData.get("scene"),
+    pace: formData.get("pace") || "steady",
+    expression: formData.get("expression"),
+    planning: "balanced",
+    energy: formData.get("expression") === "playful" ? "spark" : "warm",
+  };
+  if (!contact) {
+    setMessage("quiz-message", "请留下一个接收匹配结果的入口。");
+    return;
+  }
+  let result = null;
+  if (state.user) {
+    result = await api("/api/test", "POST", { answers }, "quiz-message");
+  } else {
+    const localResult = summarizeLocalResult(answers, []);
+    const lead = await api(
+      "/api/leads",
+      "POST",
+      {
+        name: "3分钟快测用户",
+        city: "待确认",
+        contact,
+        interest_note: `3分钟快测：场景=${answers.scene}；目标=${answers.expression}；来源=quiz`,
+      },
+      "quiz-message"
+    );
+    if (lead?.ok) result = { result: localResult };
+  }
   if (result?.result) {
     state.profile = state.profile || {};
+    state.profile.test_answers = answers;
     state.profile.test_result = result.result;
     renderResult(result.result);
     syncDashboardState();
-    setMessage("quiz-message", "同频画像已生成。", true);
+    setMessage("quiz-message", "同频基因已生成，正在为你匹配同城现场。", true);
+    openQuizModal(result.result);
   }
 });
 
@@ -602,6 +661,24 @@ function closeActivityDrawer() {
   document.body.classList.remove("has-drawer");
 }
 
+function openQuizModal(result) {
+  if (!quizModal || !result) return;
+  document.getElementById("quiz-modal-title").textContent = `你的同频基因：${result.title}`;
+  document.getElementById("quiz-modal-summary").textContent = result.summary;
+  document.getElementById("quiz-modal-archetype").textContent = result.archetype;
+  document.getElementById("quiz-modal-match").textContent = result.best_match;
+  quizModal.classList.remove("hidden");
+  quizModal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("has-drawer");
+}
+
+function closeQuizModal() {
+  if (!quizModal || quizModal.classList.contains("hidden")) return;
+  quizModal.classList.add("hidden");
+  quizModal.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("has-drawer");
+}
+
 function updateScrollState() {
   const max = document.documentElement.scrollHeight - window.innerHeight;
   const progress = max > 0 ? Math.min(100, Math.max(0, (window.scrollY / max) * 100)) : 0;
@@ -611,7 +688,7 @@ function updateScrollState() {
 
 function setupReveals() {
   const targets = Array.from(
-    document.querySelectorAll(".scene-band, .activities-section, .story-card, .promise-panel, .split-panel, .dashboard-grid, .form-section, .result-card, .support-section, [data-reveal]")
+    document.querySelectorAll(".scene-band, .activities-section, .live-moments, .story-card, .co-creator, .promise-panel, .safety-promise, .split-panel, .dashboard-grid, .form-section, .result-card, .final-cta, [data-reveal]")
   );
   targets.forEach((target) => {
     if (!target.dataset.reveal) target.dataset.reveal = "";
@@ -795,6 +872,12 @@ function serializeProfileForm() {
     availability: formData.get("availability"),
     budget_preference: formData.get("budget_preference"),
   };
+}
+
+function withLeadSource(note = "", source = "homepage") {
+  const cleanNote = String(note || "").trim();
+  const cleanSource = String(source || "homepage").trim();
+  return [cleanNote, `来源：${cleanSource}`].filter(Boolean).join("\n");
 }
 
 async function api(url, method, payload, messageId) {
