@@ -31,6 +31,11 @@ DEFAULT_SUPPORT_MESSAGE = os.environ.get(
 ADMIN_EMAIL = os.environ.get("TONGPIN_ADMIN_EMAIL", "admin@tongpin.local").strip().lower()
 ADMIN_PASSWORD = os.environ.get("TONGPIN_ADMIN_PASSWORD", "Admin123!")
 COOKIE_SECURE = os.environ.get("TONGPIN_COOKIE_SECURE", "0").lower() in {"1", "true", "yes"}
+ALLOWED_ORIGINS = {
+    item.strip().rstrip("/")
+    for item in os.environ.get("TONGPIN_ALLOWED_ORIGINS", "*").split(",")
+    if item.strip()
+}
 
 
 class ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
@@ -346,10 +351,7 @@ class AppHandler(BaseHTTPRequestHandler):
 
     def do_OPTIONS(self):
         self.send_response(HTTPStatus.NO_CONTENT)
-        self.send_header("Access-Control-Allow-Origin", self.headers.get("Origin", "*"))
-        self.send_header("Access-Control-Allow-Credentials", "true")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_cors_headers()
         self.end_headers()
 
     def do_GET(self):
@@ -457,6 +459,7 @@ class AppHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.send_security_headers()
+        self.send_cors_headers()
         if extra_headers:
             for key, value in extra_headers.items():
                 self.send_header(key, value)
@@ -469,6 +472,7 @@ class AppHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "text/plain; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.send_security_headers()
+        self.send_cors_headers()
         self.end_headers()
         self.wfile.write(body)
 
@@ -516,6 +520,17 @@ class AppHandler(BaseHTTPRequestHandler):
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
         self.send_header("Permissions-Policy", "geolocation=(), camera=(), microphone=()")
+
+    def send_cors_headers(self):
+        origin = (self.headers.get("Origin") or "").rstrip("/")
+        if not origin:
+            return
+        if "*" in ALLOWED_ORIGINS or origin in ALLOWED_ORIGINS:
+            self.send_header("Access-Control-Allow-Origin", origin)
+            self.send_header("Access-Control-Allow-Credentials", "true")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            self.send_header("Vary", "Origin")
 
     def guess_type(self, path):
         types = {
@@ -573,7 +588,8 @@ class AppHandler(BaseHTTPRequestHandler):
         return {"Set-Cookie": self.make_cookie(token, max_age=max_age)}
 
     def make_cookie(self, token, max_age):
-        parts = [f"session_token={token}", "Path=/", f"Max-Age={max_age}", "HttpOnly", "SameSite=Lax"]
+        same_site = "None" if COOKIE_SECURE else "Lax"
+        parts = [f"session_token={token}", "Path=/", f"Max-Age={max_age}", "HttpOnly", f"SameSite={same_site}"]
         if COOKIE_SECURE:
             parts.append("Secure")
         return "; ".join(parts)
@@ -1351,6 +1367,7 @@ class AppHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "text/csv; charset=utf-8")
         self.send_header("Content-Disposition", 'attachment; filename="activity-signups.csv"')
         self.send_header("Content-Length", str(len(body)))
+        self.send_cors_headers()
         self.end_headers()
         self.wfile.write(body)
 

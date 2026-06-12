@@ -4,6 +4,9 @@ const adminState = {
   refreshTimer: null,
 };
 
+const API_BASE = String(window.TONGPIN_API_BASE || "").replace(/\/+$/, "");
+const API_FETCH_OPTIONS = API_BASE ? { credentials: "include" } : { credentials: "same-origin" };
+
 const adminMetrics = document.getElementById("admin-metrics");
 const adminUsersBody = document.getElementById("admin-users-body");
 const adminLeadsBody = document.getElementById("admin-leads-body");
@@ -18,7 +21,7 @@ const adminLoginForm = document.getElementById("admin-login-form");
 const adminPasswordForm = document.getElementById("admin-password-form");
 
 adminLogout.addEventListener("click", async () => {
-  await fetch("/api/auth/logout", { method: "POST" });
+  await fetch(apiUrl("/api/auth/logout"), { method: "POST", ...API_FETCH_OPTIONS });
   window.location.href = "/";
 });
 
@@ -30,8 +33,9 @@ adminLoginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   setMessage("admin-login-message", "正在切换管理员账号…");
   const payload = Object.fromEntries(new FormData(adminLoginForm).entries());
-  const response = await fetch("/api/auth/login", {
+  const response = await fetch(apiUrl("/api/auth/login"), {
     method: "POST",
+    ...API_FETCH_OPTIONS,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
@@ -88,7 +92,7 @@ adminPasswordForm.addEventListener("submit", async (event) => {
 });
 
 async function bootstrapAdmin() {
-  const me = await fetch("/api/auth/me").then((res) => res.json());
+  const me = await fetch(apiUrl("/api/auth/me"), API_FETCH_OPTIONS).then((res) => res.json());
   if (!me.user || me.user.role !== "admin") {
     adminState.me = null;
     adminContent.classList.add("hidden");
@@ -283,7 +287,7 @@ function setMessage(id, text, success = false) {
 }
 
 async function apiJson(url, options) {
-  const response = await fetch(url, options);
+  const response = await fetch(apiUrl(url), { ...API_FETCH_OPTIONS, ...(options || {}) });
   const contentType = response.headers.get("content-type") || "";
   const payload = contentType.includes("application/json") ? await response.json() : {};
   if (!response.ok) {
@@ -292,6 +296,15 @@ async function apiJson(url, options) {
   }
   return payload;
 }
+
+function apiUrl(url) {
+  if (!API_BASE || /^https?:\/\//i.test(url)) return url;
+  return `${API_BASE}${url}`;
+}
+
+document.querySelectorAll(".export-link").forEach((link) => {
+  link.href = apiUrl("/api/admin/activity-signups/export.csv");
+});
 
 window.addEventListener("focus", () => {
   if (adminState.me) refreshAllAdminData();

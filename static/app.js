@@ -11,6 +11,8 @@ const state = {
 };
 
 const staticStoreKey = "tongpin-static-demo";
+const API_BASE = String(window.TONGPIN_API_BASE || "").replace(/\/+$/, "");
+const API_FETCH_OPTIONS = API_BASE ? { credentials: "include" } : { credentials: "same-origin" };
 const demoActivities = [
   {
     id: 1,
@@ -192,7 +194,7 @@ logoutButton.addEventListener("click", async () => {
     data.currentUserEmail = null;
     saveStaticStore(data);
   } else {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await fetch(apiUrl("/api/auth/logout"), { method: "POST", ...API_FETCH_OPTIONS });
   }
   state.user = null;
   state.profile = null;
@@ -892,8 +894,9 @@ async function api(url, method, payload, messageId) {
       setMessage(messageId, "");
       return localResult;
     }
-    const response = await fetch(url, {
+    const response = await fetch(apiUrl(url), {
       method,
+      ...API_FETCH_OPTIONS,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
@@ -919,13 +922,18 @@ async function api(url, method, payload, messageId) {
 async function getJson(url, fallbackFactory) {
   try {
     if (state.staticMode) return fallbackFactory();
-    const response = await fetch(url);
+    const response = await fetch(apiUrl(url), API_FETCH_OPTIONS);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return await response.json();
   } catch (error) {
     state.staticMode = true;
     return fallbackFactory();
   }
+}
+
+function apiUrl(url) {
+  if (!API_BASE || /^https?:\/\//i.test(url)) return url;
+  return `${API_BASE}${url}`;
 }
 
 function loadStaticStore() {
