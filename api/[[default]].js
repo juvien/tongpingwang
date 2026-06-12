@@ -40,3 +40,9 @@ export async function POST(request) {
 export async function OPTIONS(request) {
   return proxy(request);
 }
+
+export default {
+  fetch(request) {
+    return proxy(request);
+  },
+};
