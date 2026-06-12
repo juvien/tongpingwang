@@ -1,0 +1,5 @@
+{
+  "installCommand": "",
+  "buildCommand": "bash scripts/build_iga_pages.sh",
+  "outputDirectory": "dist/iga-pages"
+}

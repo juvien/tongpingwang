@@ -3,6 +3,7 @@ backups/
 *.pyc
 __pycache__/
 .DS_Store
+.iga/
 tmp/
 tmp-*.png
 dist/
